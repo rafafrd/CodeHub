@@ -71,18 +71,19 @@ graph TD
 
 ## Checklist de Progresso
 
-### Fase 0 — Fundação do Monorepo
-- [ ] `package.json` raiz com `workspaces: ["app/*"]`
-- [ ] `.gitignore`, `.eslintrc.json`, `.eslintignore`, `.prettierrc` globais
-- [ ] `tsconfig.base.json` na raiz
-- [ ] (Opcional, recomendado) `git init` para versionar o histórico
+### Fase 0 — Fundação do Monorepo ✅ (2026-05-30)
+- [x] `package.json` raiz com `workspaces: ["app/*"]`
+- [x] `.gitignore` (expandido), `.eslintrc.json`, `.eslintignore`, `.prettierrc` globais
+- [x] `tsconfig.base.json` na raiz
+- [x] Repositório git já existia (origin: github.com/rafafrd/CodeHub) — `git init` desnecessário
 
-### Fase 1 — Scaffold `app/api/`
-- [ ] `app/api/package.json` (deps: `express`, `mysql2`, `zod`, `gray-matter`; dev: `typescript`, `jest`, `ts-jest`, `@types/*`, `supertest`)
-- [ ] `app/api/tsconfig.json` + `jest.config.ts` (scripts `test`, `test:watch`, `test:coverage`)
-- [ ] Estrutura de pastas `src/modules/{snippets,types,tags}` + `src/shared/{http,errors}`
-- [ ] `shared/errors/app-error.ts` (classe de erro de domínio)
-- [ ] `shared/http/server.ts` + `shared/http/routes.ts` (sobe Express)
+### Fase 1 — Scaffold `app/api/` ✅ (2026-05-30)
+- [x] `app/api/package.json` (deps: `express`, `mysql2`, `zod`, `gray-matter`; dev: `typescript`, `jest`, `ts-jest`, `@types/*`, `supertest`)
+- [x] `app/api/tsconfig.json` + `jest.config.ts` (scripts `test`, `test:watch`, `test:coverage`)
+- [x] Estrutura de pastas `src/modules/{snippets,types,tags}` + `src/shared/{http,errors}` (com `.gitkeep`)
+- [x] `shared/errors/app-error.ts` (+ `.spec.ts`) — classe de erro de domínio
+- [x] `shared/http/app.ts` (app testável) + `server.ts` + `routes.ts` (`/health`) + smoke test
+- [x] Verificado: `npm test` (3 ok) + `npm run build` + `npm run lint` passando
 
 ### Fase 2 — Modelos de Domínio + Esquema Canônico
 - [ ] `modules/snippets/models/snippet.ts` (+ tipos de `types` e `tags`)
@@ -130,5 +131,6 @@ graph TD
 
 ## Log de Decisões e Pendências
 - **2026-05-30:** Definidas as 4 decisões de arquitetura (mysql2 / Auto Increment / Zod / npm workspaces).
+- **2026-05-30:** Fases 0 e 1 concluídas na branch `feature/fase-0-1-fundacao-e-scaffold-api`. Verificado (test/build/lint). PR alvo: `dev`.
 - **Pendência:** Limpar `SDD.md` §3 (tabelas duplicadas) e §5 (endpoints presos no bloco JSON). Fonte da verdade temporária = este ROADMAP.
-- **Aguardando:** confirmação do usuário sobre o ponto de partida (sugestão: Fase 0 → Fase 1 → primeiro TDD em `CreateSnippetService`).
+- **Próximo:** Fase 2 (modelos de domínio + migration do esquema canônico), depois Fase 3 (repositories) e Fase 4 (TDD do `CreateSnippetService`).
