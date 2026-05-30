@@ -1,3 +1,29 @@
-.env
+# Dependências
+node_modules/
 
+# Saída de build
 dist/
+build/
+
+# Cobertura de testes
+coverage/
+
+# Variáveis de ambiente (segredos)
+.env
+.env.local
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# SO / Editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Conteúdo gerado em runtime (snippets físicos).
+# OBS: decidir em equipe se os .md de storage devem ou não ser versionados.
+app/api/storage/*.md
+!app/api/storage/.gitkeep
