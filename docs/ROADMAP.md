@@ -90,10 +90,11 @@ graph TD
 - [x] Migration SQL com o esquema canônico → `app/api/src/database/migrations/001_initial_schema.sql` (+ README)
 - [x] `SDD.md` §3 e §5 corrigidas + Frontmatter adicionado
 
-### Fase 3 — Repositories
-- [ ] `repositories/file-system-repository.ts` (gera/lê/atualiza/apaga `.md` via gray-matter)
-- [ ] `repositories/snippet-repository.ts` (mysql2: insert/select/update/delete + pivô de tags)
-- [ ] Interfaces dos repositories (para mock nos Services)
+### Fase 3 — Repositories ✅ (2026-05-30)
+- [x] `repositories/file-system-repository.ts` + `.spec.ts` (gera/lê/apaga `.md` via gray-matter; fs mockado)
+- [x] `repositories/snippet-repository.ts` + `.spec.ts` (mysql2: create/updateFilePath/attachTags/findById/list/delete)
+- [x] Interfaces `FileSystemRepository` e `SnippetRepository` (para mock nos Services na Fase 4)
+- [x] `database/connection.ts` (pool mysql2) + `Snippet.filePath` agora `string | null`
 
 ### Fase 4 — Services (TDD estrito — coração do projeto)
 - [ ] **`create-snippet-service.spec.ts` (RED) → `create-snippet-service.ts` (GREEN) → REFACTOR**  ⭐ primeiro alvo de TDD
