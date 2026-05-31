@@ -73,10 +73,13 @@ docker compose down -v     # para e APAGA os volumes (zera MySQL + storage dos .
 
 **Variáveis de ambiente (opcionais — têm default):** crie um `.env` na raiz para sobrescrever.
 
-| Variável | Default |
-| --- | --- |
-| `DB_PASSWORD` | `root` |
-| `DB_NAME` | `codehub` |
+| Variável | Default | |
+| --- | --- | --- |
+| `DB_PASSWORD` | `root` | senha do root do MySQL |
+| `DB_NAME` | `codehub` | nome do banco |
+| `DB_HOST_PORT` | `3307` | porta do host para o MySQL (use `3306` só se não houver MySQL local) |
+
+> **Conflito de porta?** Se aparecer `bind: ... 3306 ... address already in use`, é porque você tem um MySQL rodando no host. A stack já publica o MySQL na **3307** por padrão para evitar isso (a API não depende dessa porta — usa a rede interna). Só o Nginx (`8080`) precisa estar livre.
 
 ### Fluxo da stack
 
