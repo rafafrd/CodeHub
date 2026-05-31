@@ -5,58 +5,119 @@ O **CodeHub** é um sistema centralizado e um inventário inteligente para armaz
 ## 🏗️ Arquitetura e Stack Tecnológica
 
 O projeto foi construído sob uma arquitetura de **Monorepo** e utiliza uma abordagem de **Armazenamento Híbrido**:
-- **Indexação e Taxonomia:** MySQL (gerenciamento de relacionamentos, categorias e tags).
-- **Armazenamento de Conteúdo:** File System local, utilizando arquivos Markdown (`.md`) com Frontmatter para metadados e suporte nativo a diagramas Mermaid.
+
+- **Indexação e Taxonomia:** MySQL (relacionamentos, categorias e tags).
+- **Armazenamento de Conteúdo:** File System local, com arquivos Markdown (`.md`) usando Frontmatter para metadados e suporte a diagramas Mermaid.
 
 **Stack Principal:**
-- **Backend:** Node.js, TypeScript, Express.js.
-- **Testes:** Jest (Foco estrito em TDD na camada de Services).
-- **Banco de Dados:** MySQL.
-- **Infraestrutura:** Docker, Nginx, GitHub Actions (CI/CD).
+
+- **Backend:** Node.js, TypeScript, Express.js (arquitetura limpa: Routes → Controllers → Services → Repositories).
+- **Validação:** Zod. **Testes:** Jest (TDD estrito na camada de Services).
+- **Banco de Dados:** MySQL (driver `mysql2`, SQL puro).
+- **Infraestrutura:** Docker, Nginx, GitHub Actions (CI).
 
 ## 📂 Estrutura do Monorepo (Workspaces)
 
-O repositório está dividido em áreas de responsabilidade isoladas:
-
 ```text
 codehub/
-├── docs/               # Documentação base do projeto (PDD, SDD, TDD)
+├── docs/                 # Documentação base (PDD, SDD, TDD, ROADMAP)
 ├── app/
-│   ├── api/            # Backend (Node.js + Express)
-│   └── web/            # Frontend (Interface do Usuário)
-├── infra/              # Arquivos de infraestrutura (Docker, Nginx, Terraform)
-├── .github/workflows/  # Pipelines de CI/CD
-└── claude.md           # Diretrizes arquiteturais e regras de IA
+│   ├── api/              # Backend (Node.js + Express) — inclui o Dockerfile
+│   └── web/              # Frontend (futuro)
+├── infra/
+│   └── nginx/            # Configuração do proxy reverso (Nginx)
+├── .github/workflows/    # Pipeline de CI (lint + test + build)
+├── docker-compose.yml    # Orquestra API + MySQL + Nginx
+└── claude.md             # Diretrizes arquiteturais e regras de IA
 ```
-📖 Documentação e Metodologia
-O desenvolvimento do CodeHub é estritamente guiado por três pilares documentais localizados na pasta docs/:
 
-PDD (Product Driven Development): Define as jornadas de valor, os casos de uso principais e o comportamento esperado do produto.
+## 🐳 Como rodar (Docker — recomendado)
 
-SDD (Spec Driven Development): Especifica a planta baixa técnica, os esquemas de banco de dados, os contratos da API (REST) e a estrutura exata do file system.
+Sobe a stack completa — **API + MySQL + Nginx** — com a migration do banco aplicada **automaticamente** na primeira execução.
 
-TDD (Test Driven Development): Documenta a estratégia de testes obrigatória (Red-Green-Refactor). Nenhuma regra de negócio é implementada sem um teste unitário prévio em Jest.
+> **Pré-requisito:** Docker + Docker Compose instalados.
 
-🤖 Nota para IAs e Assistentes de Código:
-Antes de sugerir qualquer alteração estrutural ou implementar novos serviços, é obrigatório ler o arquivo claude.md na raiz do projeto. Ele contém as diretrizes inegociáveis de tipagem, estrutura de pastas e o fluxo de trabalho de testes.
+```bash
+# 1. Builda as imagens
+docker compose build
 
-🚀 Como Iniciar o Desenvolvimento
-Como o projeto utiliza a estrutura de workspaces do npm/yarn, as dependências são gerenciadas de forma global e isolada por módulo.
+# 2. Sobe os serviços em segundo plano (-d = detached)
+docker compose up -d
+```
 
-1. Clone o repositório:
+A API fica acessível, através do Nginx, em **http://localhost:8080**.
 
-Bash
-git clone [https://github.com/seu-usuario/codehub.git](https://github.com/seu-usuario/codehub.git)
-cd codehub
-2. Instale as dependências da raiz:
+**Verifique se subiu:**
 
-```Bash
+```bash
+curl http://localhost:8080/health
+# {"status":"ok","service":"codehub-api"}
+```
+
+**Endpoints disponíveis:**
+
+| Recurso | Rota base |
+| --- | --- |
+| Snippets | `/api/snippets` |
+| Tipos de projeto | `/api/types` |
+| Tags | `/api/tags` |
+
+**Operação:**
+
+```bash
+docker compose ps          # status dos containers
+docker compose logs -f api # acompanha os logs da API
+docker compose down        # para tudo (mantém os dados nos volumes)
+docker compose down -v     # para e APAGA os volumes (zera MySQL + storage dos .md)
+```
+
+**Variáveis de ambiente (opcionais — têm default):** crie um `.env` na raiz para sobrescrever.
+
+| Variável | Default |
+| --- | --- |
+| `DB_PASSWORD` | `root` |
+| `DB_NAME` | `codehub` |
+
+### Fluxo da stack
+
+```mermaid
+graph LR
+    Client -->|":8080"| Nginx
+    Nginx -->|":3333"| API
+    API -->|":3306"| MySQL
+    API -->|".md"| FS[(File System / storage)]
+```
+
+## 🧪 Desenvolvimento local (sem Docker)
+
+Requer Node.js 20+. As dependências são gerenciadas via **npm workspaces**.
+
+```bash
+# 1. Instala as dependências (na raiz)
 npm install
-```
-3. Navegue até a API e inicie o ambiente de TDD:
 
-```Bash
-cd app/api
-npm run test:watch
+# 2. Roda os testes em watch (ciclo de TDD)
+npm test            # roda toda a suíte uma vez
+npm run lint        # ESLint
+npm run build       # compila o TypeScript
+
+# Para iterar em TDD na API:
+npm run test:watch -w @codehub/api
 ```
+
+> Para rodar a API localmente apontando para um MySQL próprio, copie `app/api/.env.example` para `app/api/.env` e ajuste as credenciais.
+
+## 📖 Documentação e Metodologia
+
+O desenvolvimento é guiado por quatro documentos em `docs/`:
+
+- **PDD** — jornadas de valor e casos de uso do produto.
+- **SDD** — planta técnica: esquema do banco, contratos da API (REST) e estrutura.
+- **TDD** — estratégia de testes obrigatória (Red → Green → Refactor).
+- **ROADMAP** — plano de execução e rastreador de progresso (fases 0–7).
+
+> 🤖 **Nota para IAs e Assistentes de Código:** antes de qualquer alteração estrutural, é obrigatório ler o `claude.md` na raiz — ele contém as diretrizes inegociáveis de tipagem, estrutura de pastas e fluxo de testes.
+
+---
+
 Desenvolvido com foco em padronização, segurança (DevSecOps) e arquitetura limpa.
