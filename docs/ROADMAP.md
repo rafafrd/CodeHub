@@ -104,11 +104,12 @@ graph TD
 - [x] `delete-snippet-service` (apaga arquivo + registro; pivô em cascata) ✅
 - [x] `SnippetRepository` estendido: `update` + `replaceTags` (com specs)
 
-### Fase 5 — Controllers + Routes + Validação
-- [ ] Schemas Zod de entrada
-- [ ] `create-snippet-controller.ts` + `snippet-routes.ts`
-- [ ] Plugar rotas no `shared/http/routes.ts`
-- [ ] Testes de integração (supertest): 200/201/400/404
+### Fase 5 — Controllers + Routes + Validação ✅ (2026-05-30)
+- [x] Schemas Zod (`snippet-schemas.ts`): body snake_case (SDD §5) → input camelCase; query e `:id`
+- [x] `SnippetController` (5 ações) + `snippet-routes.ts` (injeção do controller) + `snippet-module.ts` (composição)
+- [x] Rotas plugadas em `shared/http/routes.ts` (`/api/snippets`); `errorHandler` central + `asyncHandler`
+- [x] Testes de integração (supertest): 201/400/200/404/204 — Services mockados
+- [x] `.eslintrc`: `no-unused-vars` com `argsIgnorePattern: ^_` (error handler do Express tem 4 args)
 
 ### Fase 6 — Módulos `types` e `tags`
 - [ ] CRUD de `project_types`
@@ -139,4 +140,7 @@ graph TD
 - **2026-05-30:** Review do Copilot no PR da Fase 2 — aplicados 4 ajustes (aprovados): `file_path` agora `NULL` (compatível com o fluxo insert→arquivo→update); SDD §5 `GET/:id` corrige violação de camadas (FS no Service/Repo, não no Controller); IDs padronizados para `INT UNSIGNED AUTO_INCREMENT` no SDD; exemplo de Frontmatter (§4) com `id` inteiro (não UUID).
 - **2026-05-30:** Fase 3 (repositories) mergeada na `dev` (PR #3).
 - **2026-05-30:** Fase 4 COMPLETA — 5 services (create/list/get/update/delete) via TDD, 36 testes verdes. Repo estendido com `update`/`replaceTags`.
-- **Próximo:** Fase 5 — Controllers + Routes + validação Zod + testes de integração (supertest: 200/201/400/404), plugando as rotas em `shared/http/routes.ts`.
+- **2026-05-30:** Fase 4 mergeada na `dev` (PR #4).
+- **2026-05-30:** Fase 5 COMPLETA — camada HTTP de snippets (controller + rotas + Zod + error handler), 42 testes verdes (6 de integração). API responde de ponta a ponta em `/api/snippets`.
+- **Decisão Fase 5:** filtros de listagem por **id** (`?typeId=&tagId=&search=`), consistente com o contrato id-based. O exemplo do SDD §5 com nomes (`?type=devsecops`) fica para a Fase 6 (quando houver lookup de tipo/tag por nome).
+- **Próximo:** Fase 6 — módulos `types` e `tags` (CRUD), depois Fase 7 (infra: Docker/Nginx/CI).

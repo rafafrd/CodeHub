@@ -1,5 +1,6 @@
 import express, { Application } from "express";
 
+import { errorHandler } from "./middlewares/error-handler";
 import { router } from "./routes";
 
 /**
@@ -12,5 +13,8 @@ const app: Application = express();
 
 app.use(express.json());
 app.use(router);
+
+// Middleware de erro central — deve ser o último registrado.
+app.use(errorHandler);
 
 export { app };
