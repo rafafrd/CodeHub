@@ -107,4 +107,46 @@ describe("MySqlSnippetRepository", () => {
       expect(result).toBeNull();
     });
   });
+
+  describe("update", () => {
+    it("deve atualizar title, description e type_id pelo id", async () => {
+      const { pool, execute } = makePoolMock();
+      const repository = new MySqlSnippetRepository(pool);
+
+      await repository.update(7, {
+        title: "Novo",
+        description: "desc",
+        typeId: 3,
+      });
+
+      const [sql, params] = execute.mock.calls[0];
+      expect(sql).toContain("UPDATE snippets SET");
+      expect(params).toEqual(["Novo", "desc", 3, 7]);
+    });
+  });
+
+  describe("replaceTags", () => {
+    it("deve apagar as tags atuais e inserir as novas", async () => {
+      const { pool, execute } = makePoolMock();
+      const repository = new MySqlSnippetRepository(pool);
+
+      await repository.replaceTags(7, [3, 5]);
+
+      const [deleteSql] = execute.mock.calls[0];
+      const [insertSql, insertParams] = execute.mock.calls[1];
+      expect(deleteSql).toContain("DELETE FROM snippet_tags WHERE snippet_id = ?");
+      expect(insertSql).toContain("INSERT INTO snippet_tags");
+      expect(insertParams).toEqual([7, 3, 7, 5]);
+    });
+
+    it("deve apenas apagar quando a nova lista de tags é vazia", async () => {
+      const { pool, execute } = makePoolMock();
+      const repository = new MySqlSnippetRepository(pool);
+
+      await repository.replaceTags(7, []);
+
+      expect(execute).toHaveBeenCalledTimes(1);
+      expect(execute.mock.calls[0][0]).toContain("DELETE FROM snippet_tags");
+    });
+  });
 });

@@ -96,12 +96,13 @@ graph TD
 - [x] Interfaces `FileSystemRepository` e `SnippetRepository` (para mock nos Services na Fase 4)
 - [x] `database/connection.ts` (pool mysql2) + `Snippet.filePath` agora `string | null`
 
-### Fase 4 — Services (TDD estrito — coração do projeto)
-- [ ] **`create-snippet-service.spec.ts` (RED) → `create-snippet-service.ts` (GREEN) → REFACTOR**  ⭐ primeiro alvo de TDD
-- [ ] `list-snippets-service` (filtros: type, tag, search) — CU02
-- [ ] `get-snippet-service` (lê o `.md` físico) — CU03
-- [ ] `update-snippet-service`
-- [ ] `delete-snippet-service`
+### Fase 4 — Services (TDD estrito — coração do projeto) ✅ (2026-05-30)
+- [x] **`create-snippet-service`** ✅ (RED→GREEN, 6 testes): valida regra, resolve type/tags (id→nome), INSERT, grava `.md`, update path, attach tags, compensação em falha. Deps de leitura criadas: `ProjectTypeRepository.findById` e `TagRepository.findByIds`.
+- [x] `list-snippets-service` (filtros type/tag/search; normaliza busca) — CU02 ✅
+- [x] `get-snippet-service` (lê o `.md` via `FileSystemRepository.read`; 404 se ausente) — CU03 ✅
+- [x] `update-snippet-service` (reescreve metadados + `.md`; preserva `created_at`; `replaceTags`) ✅
+- [x] `delete-snippet-service` (apaga arquivo + registro; pivô em cascata) ✅
+- [x] `SnippetRepository` estendido: `update` + `replaceTags` (com specs)
 
 ### Fase 5 — Controllers + Routes + Validação
 - [ ] Schemas Zod de entrada
@@ -134,6 +135,8 @@ graph TD
 - **2026-05-30:** Definidas as 4 decisões de arquitetura (mysql2 / Auto Increment / Zod / npm workspaces).
 - **2026-05-30:** Fases 0 e 1 concluídas na branch `feature/fase-0-1-fundacao-e-scaffold-api` e mergeadas na `dev`.
 - **2026-05-30:** Fase 2 concluída na branch `feature/fase-2-modelos-e-schema`: modelos de domínio, migration `001` e correção do `SDD.md` (§3/§5). ✅ Pendência da §3/§5 resolvida.
-- **Pendência (resolver na Fase 4):** o exemplo do `TDD.md` usa `type` e `tags` por **nome** (string), enquanto o `SDD.md` §5 usa **ids** (`type_id`, `tags: [1,5,8]`). Definir o contrato de entrada do `CreateSnippetService` ao escrever o teste (RED).
+- **2026-05-30:** ✅ Pendência nome-vs-id RESOLVIDA na Fase 4: o contrato de entrada do `CreateSnippetService` usa **IDs** (`typeId`/`tagIds`, conforme `SDD.md` §5). O Service resolve os **nomes** internamente (via `ProjectTypeRepository`/`TagRepository`) para gravar o Frontmatter legível (`SDD.md` §4). O exemplo do `TDD.md` com nomes era ilustrativo.
 - **2026-05-30:** Review do Copilot no PR da Fase 2 — aplicados 4 ajustes (aprovados): `file_path` agora `NULL` (compatível com o fluxo insert→arquivo→update); SDD §5 `GET/:id` corrige violação de camadas (FS no Service/Repo, não no Controller); IDs padronizados para `INT UNSIGNED AUTO_INCREMENT` no SDD; exemplo de Frontmatter (§4) com `id` inteiro (não UUID).
-- **Próximo:** Fase 3 (repositories `SnippetRepository`/mysql2 + `FileSystemRepository`/gray-matter), depois Fase 4 (TDD do `CreateSnippetService`).
+- **2026-05-30:** Fase 3 (repositories) mergeada na `dev` (PR #3).
+- **2026-05-30:** Fase 4 COMPLETA — 5 services (create/list/get/update/delete) via TDD, 36 testes verdes. Repo estendido com `update`/`replaceTags`.
+- **Próximo:** Fase 5 — Controllers + Routes + validação Zod + testes de integração (supertest: 200/201/400/404), plugando as rotas em `shared/http/routes.ts`.
