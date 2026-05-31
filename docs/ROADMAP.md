@@ -1,7 +1,7 @@
 ---
 title: "ROADMAP - CodeHub"
 description: "Plano de execução e rastreador de progresso para retomada entre sessões"
-status: "em andamento"
+status: "MVP concluído (Fases 0–7)"
 updated_at: "2026-05-30"
 ---
 
@@ -116,10 +116,11 @@ graph TD
 - [x] CRUD de `tags`: repo estendido + 4 services (TDD) + controller/rotas/Zod + integração → `/api/tags`
 - [x] Unicidade de nome validada nos services (409); rotas plugadas em `shared/http/routes.ts`
 
-### Fase 7 — Infraestrutura
-- [ ] `infra/` Dockerfile (api) + `docker-compose.yml` (api + mysql)
-- [ ] `infra/` config Nginx (proxy reverso + headers de segurança do SDD)
-- [ ] `.github/workflows/` (lint + test no CI)
+### Fase 7 — Infraestrutura ✅ (2026-05-30)
+- [x] `app/api/Dockerfile` (multi-stage) + `.dockerignore` — **imagem validada (build + boot + /health)**
+- [x] `infra/docker-compose.yml` (api + mysql + nginx; migration `001` auto-aplicada via initdb)
+- [x] `infra/nginx/default.conf` (proxy reverso + headers de segurança OWASP do SDD)
+- [x] `.github/workflows/ci.yml` (lint + test + build) + `infra/README.md`
 
 ## Mapeamento Casos de Uso (PDD) → Fases
 - **CU01** (Cadastrar snippet): Fases 3, 4, 5
@@ -146,4 +147,6 @@ graph TD
 - **Decisão Fase 5:** filtros de listagem por **id** (`?typeId=&tagId=&search=`), consistente com o contrato id-based. O exemplo do SDD §5 com nomes (`?type=devsecops`) fica para a Fase 6 (quando houver lookup de tipo/tag por nome).
 - **2026-05-30:** Fase 5 mergeada na `dev` (PR #5).
 - **2026-05-30:** Fase 6 COMPLETA — CRUD de `types` e `tags` (8 services via TDD + controllers/rotas/Zod + integração). Total: 71 testes verdes. API expõe `/api/snippets`, `/api/types`, `/api/tags`.
-- **Próximo:** Fase 7 — infra (Dockerfile + docker-compose api+mysql + Nginx + CI). Permite subir tudo e testar o fluxo real de ponta a ponta.
+- **2026-05-30:** Fase 6 mergeada na `dev` (PR #6).
+- **2026-05-30:** Fase 7 COMPLETA — Dockerfile multi-stage (imagem validada: build + boot + `/health` ok), docker-compose (api+mysql+nginx, migration auto), Nginx com headers OWASP, CI. **MVP do backend concluído (Fases 0–7).**
+- **Backlog (melhorias futuras):** `DELETE /api/types/:id` em uso → mapear FK RESTRICT para 409; filtro de listagem por nome (SDD §5 `?type=devsecops`); testes de integração com banco real; HTTPS/TLS no Nginx; frontend (`app/web`).
