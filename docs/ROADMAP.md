@@ -85,10 +85,10 @@ graph TD
 - [x] `shared/http/app.ts` (app testável) + `server.ts` + `routes.ts` (`/health`) + smoke test
 - [x] Verificado: `npm test` (3 ok) + `npm run build` + `npm run lint` passando
 
-### Fase 2 — Modelos de Domínio + Esquema Canônico
-- [ ] `modules/snippets/models/snippet.ts` (+ tipos de `types` e `tags`)
-- [ ] Migration SQL com o esquema canônico acima
-- [ ] Consolidar/limpar `SDD.md` §3 e §5 (ou referenciar este ROADMAP como fonte)
+### Fase 2 — Modelos de Domínio + Esquema Canônico ✅ (2026-05-30)
+- [x] `modules/snippets/models/snippet.ts` (+ `types/models/project-type.ts`, `tags/models/tag.ts`)
+- [x] Migration SQL com o esquema canônico → `app/api/src/database/migrations/001_initial_schema.sql` (+ README)
+- [x] `SDD.md` §3 e §5 corrigidas + Frontmatter adicionado
 
 ### Fase 3 — Repositories
 - [ ] `repositories/file-system-repository.ts` (gera/lê/atualiza/apaga `.md` via gray-matter)
@@ -131,6 +131,8 @@ graph TD
 
 ## Log de Decisões e Pendências
 - **2026-05-30:** Definidas as 4 decisões de arquitetura (mysql2 / Auto Increment / Zod / npm workspaces).
-- **2026-05-30:** Fases 0 e 1 concluídas na branch `feature/fase-0-1-fundacao-e-scaffold-api`. Verificado (test/build/lint). PR alvo: `dev`.
-- **Pendência:** Limpar `SDD.md` §3 (tabelas duplicadas) e §5 (endpoints presos no bloco JSON). Fonte da verdade temporária = este ROADMAP.
-- **Próximo:** Fase 2 (modelos de domínio + migration do esquema canônico), depois Fase 3 (repositories) e Fase 4 (TDD do `CreateSnippetService`).
+- **2026-05-30:** Fases 0 e 1 concluídas na branch `feature/fase-0-1-fundacao-e-scaffold-api` e mergeadas na `dev`.
+- **2026-05-30:** Fase 2 concluída na branch `feature/fase-2-modelos-e-schema`: modelos de domínio, migration `001` e correção do `SDD.md` (§3/§5). ✅ Pendência da §3/§5 resolvida.
+- **Pendência (resolver na Fase 4):** o exemplo do `TDD.md` usa `type` e `tags` por **nome** (string), enquanto o `SDD.md` §5 usa **ids** (`type_id`, `tags: [1,5,8]`). Definir o contrato de entrada do `CreateSnippetService` ao escrever o teste (RED).
+- **2026-05-30:** Review do Copilot no PR da Fase 2 — aplicados 4 ajustes (aprovados): `file_path` agora `NULL` (compatível com o fluxo insert→arquivo→update); SDD §5 `GET/:id` corrige violação de camadas (FS no Service/Repo, não no Controller); IDs padronizados para `INT UNSIGNED AUTO_INCREMENT` no SDD; exemplo de Frontmatter (§4) com `id` inteiro (não UUID).
+- **Próximo:** Fase 3 (repositories `SnippetRepository`/mysql2 + `FileSystemRepository`/gray-matter), depois Fase 4 (TDD do `CreateSnippetService`).
