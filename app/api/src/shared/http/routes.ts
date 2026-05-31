@@ -1,5 +1,7 @@
 import { Router, Request, Response } from "express";
 
+import { buildSnippetRouter } from "../../modules/snippets/snippet-module";
+
 const router = Router();
 
 /**
@@ -9,9 +11,10 @@ router.get("/health", (_request: Request, response: Response) => {
   return response.status(200).json({ status: "ok", service: "codehub-api" });
 });
 
-// À medida que os módulos forem criados, plugue suas rotas aqui:
-// router.use("/api/snippets", snippetRoutes);
-// router.use("/api/types", typeRoutes);
-// router.use("/api/tags", tagRoutes);
+router.use("/api/snippets", buildSnippetRouter());
+
+// Próximos módulos (Fase 6):
+// router.use("/api/types", buildTypeRouter());
+// router.use("/api/tags", buildTagRouter());
 
 export { router };
