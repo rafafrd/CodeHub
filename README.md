@@ -23,7 +23,7 @@ codehub/
 ├── docs/                 # Documentação base (PDD, SDD, TDD, ROADMAP)
 ├── app/
 │   ├── api/              # Backend (Node.js + Express) — inclui o Dockerfile
-│   └── web/              # Frontend (futuro)
+│   └── web/              # Frontend (React + Vite + TypeScript + Tailwind)
 ├── infra/
 │   └── nginx/            # Configuração do proxy reverso (Nginx)
 ├── .github/workflows/    # Pipeline de CI (lint + test + build)
@@ -109,6 +109,17 @@ npm run test:watch -w @codehub/api
 ```
 
 > Para rodar a API localmente apontando para um MySQL próprio, copie `app/api/.env.example` para `app/api/.env` e ajuste as credenciais.
+
+### Frontend (`app/web`)
+
+SPA em React + Vite + Tailwind. Em dev, o Vite faz **proxy** de `/api` para a stack do backend (Nginx em `:8080`), então **suba o backend primeiro** (`docker compose up -d`) e depois:
+
+```bash
+npm run dev -w @codehub/web      # http://localhost:5173
+npm run build -w @codehub/web    # build de produção (tsc + vite)
+```
+
+A interface tem abas para **Snippets** (listar/criar/remover), **Tipos** e **Tags**.
 
 ## 📖 Documentação e Metodologia
 
