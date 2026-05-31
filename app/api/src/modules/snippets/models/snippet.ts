@@ -12,8 +12,12 @@ export interface Snippet {
   id: number;
   title: string;
   description: string | null;
-  /** Caminho do arquivo `.md` físico em `storage/`. */
-  filePath: string;
+  /**
+   * Caminho do arquivo `.md` físico em `storage/`.
+   * Nulo na janela transitória entre o INSERT e a gravação do arquivo
+   * (ver fluxo de criação no ROADMAP).
+   */
+  filePath: string | null;
   /** FK -> project_types.id */
   typeId: number;
   createdAt: Date;
