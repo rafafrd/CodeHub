@@ -1,6 +1,8 @@
 import { Router, Request, Response } from "express";
 
 import { buildSnippetRouter } from "../../modules/snippets/snippet-module";
+import { buildTagRouter } from "../../modules/tags/tag-module";
+import { buildTypeRouter } from "../../modules/types/type-module";
 
 const router = Router();
 
@@ -12,9 +14,7 @@ router.get("/health", (_request: Request, response: Response) => {
 });
 
 router.use("/api/snippets", buildSnippetRouter());
-
-// Próximos módulos (Fase 6):
-// router.use("/api/types", buildTypeRouter());
-// router.use("/api/tags", buildTagRouter());
+router.use("/api/types", buildTypeRouter());
+router.use("/api/tags", buildTagRouter());
 
 export { router };
