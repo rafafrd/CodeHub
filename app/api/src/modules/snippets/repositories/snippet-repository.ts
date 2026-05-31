@@ -9,6 +9,13 @@ export interface CreateSnippetRecord {
   typeId: number;
 }
 
+/** Dados de atualização de metadados. */
+export interface UpdateSnippetRecord {
+  title: string;
+  description: string | null;
+  typeId: number;
+}
+
 /** Filtros opcionais de listagem (CU02: por tipo, tag ou busca textual). */
 export interface SnippetListFilters {
   typeId?: number;
@@ -29,6 +36,8 @@ export interface SnippetRepository {
   create(data: CreateSnippetRecord): Promise<number>;
   updateFilePath(id: number, filePath: string): Promise<void>;
   attachTags(snippetId: number, tagIds: number[]): Promise<void>;
+  update(id: number, data: UpdateSnippetRecord): Promise<void>;
+  replaceTags(snippetId: number, tagIds: number[]): Promise<void>;
   findById(id: number): Promise<Snippet | null>;
   list(filters?: SnippetListFilters): Promise<Snippet[]>;
   delete(id: number): Promise<void>;
@@ -74,6 +83,20 @@ export class MySqlSnippetRepository implements SnippetRepository {
       `INSERT INTO snippet_tags (snippet_id, tag_id) VALUES ${placeholders}`,
       params,
     );
+  }
+
+  async update(id: number, data: UpdateSnippetRecord): Promise<void> {
+    await this.pool.execute(
+      "UPDATE snippets SET title = ?, description = ?, type_id = ? WHERE id = ?",
+      [data.title, data.description, data.typeId, id],
+    );
+  }
+
+  async replaceTags(snippetId: number, tagIds: number[]): Promise<void> {
+    await this.pool.execute("DELETE FROM snippet_tags WHERE snippet_id = ?", [
+      snippetId,
+    ]);
+    await this.attachTags(snippetId, tagIds);
   }
 
   async findById(id: number): Promise<Snippet | null> {
