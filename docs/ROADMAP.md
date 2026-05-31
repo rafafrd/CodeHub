@@ -111,9 +111,10 @@ graph TD
 - [x] Testes de integração (supertest): 201/400/200/404/204 — Services mockados
 - [x] `.eslintrc`: `no-unused-vars` com `argsIgnorePattern: ^_` (error handler do Express tem 4 args)
 
-### Fase 6 — Módulos `types` e `tags`
-- [ ] CRUD de `project_types`
-- [ ] CRUD de `tags`
+### Fase 6 — Módulos `types` e `tags` ✅ (2026-05-30)
+- [x] CRUD de `project_types`: repo estendido + 4 services (TDD) + controller/rotas/Zod + integração → `/api/types`
+- [x] CRUD de `tags`: repo estendido + 4 services (TDD) + controller/rotas/Zod + integração → `/api/tags`
+- [x] Unicidade de nome validada nos services (409); rotas plugadas em `shared/http/routes.ts`
 
 ### Fase 7 — Infraestrutura
 - [ ] `infra/` Dockerfile (api) + `docker-compose.yml` (api + mysql)
@@ -143,4 +144,6 @@ graph TD
 - **2026-05-30:** Fase 4 mergeada na `dev` (PR #4).
 - **2026-05-30:** Fase 5 COMPLETA — camada HTTP de snippets (controller + rotas + Zod + error handler), 42 testes verdes (6 de integração). API responde de ponta a ponta em `/api/snippets`.
 - **Decisão Fase 5:** filtros de listagem por **id** (`?typeId=&tagId=&search=`), consistente com o contrato id-based. O exemplo do SDD §5 com nomes (`?type=devsecops`) fica para a Fase 6 (quando houver lookup de tipo/tag por nome).
-- **Próximo:** Fase 6 — módulos `types` e `tags` (CRUD), depois Fase 7 (infra: Docker/Nginx/CI).
+- **2026-05-30:** Fase 5 mergeada na `dev` (PR #5).
+- **2026-05-30:** Fase 6 COMPLETA — CRUD de `types` e `tags` (8 services via TDD + controllers/rotas/Zod + integração). Total: 71 testes verdes. API expõe `/api/snippets`, `/api/types`, `/api/tags`.
+- **Próximo:** Fase 7 — infra (Dockerfile + docker-compose api+mysql + Nginx + CI). Permite subir tudo e testar o fluxo real de ponta a ponta.
