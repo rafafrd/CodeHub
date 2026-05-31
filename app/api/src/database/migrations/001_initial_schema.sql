@@ -25,7 +25,9 @@ CREATE TABLE IF NOT EXISTS snippets (
   id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
   title       VARCHAR(255) NOT NULL,
   description TEXT NULL,
-  file_path   VARCHAR(512) NOT NULL,
+  -- Nulo no INSERT inicial: o path depende do id auto-increment (storage/<id>.md),
+  -- então é preenchido logo após, dentro da MESMA transação (ver fluxo no ROADMAP).
+  file_path   VARCHAR(512) NULL,
   type_id     INT UNSIGNED NOT NULL,
   created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),

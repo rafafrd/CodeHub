@@ -73,18 +73,18 @@ As tabelas principais focam na taxonomia para facilitar as consultas.
 vive em `app/api/src/database/migrations/001_initial_schema.sql`.
 
 - **project_types**
-  - `id` (PK, INT AUTO_INCREMENT)
+  - `id` (PK, INT UNSIGNED AUTO_INCREMENT)
   - `name` (VARCHAR, único — ex.: "Node.js", "DevSecOps", "Frontend")
 
 - **tags**
-  - `id` (PK, INT AUTO_INCREMENT)
+  - `id` (PK, INT UNSIGNED AUTO_INCREMENT)
   - `name` (VARCHAR, único — ex.: "middleware", "docker", "nginx", "security")
 
 - **snippets**
-  - `id` (PK, INT AUTO_INCREMENT)
+  - `id` (PK, INT UNSIGNED AUTO_INCREMENT)
   - `title` (VARCHAR)
   - `description` (TEXT, nulo)
-  - `file_path` (VARCHAR — caminho para o arquivo .md no File System)
+  - `file_path` (VARCHAR, **nulo** até o `.md` ser gravado — ver fluxo de criação) — caminho para o arquivo no File System
   - `type_id` (FK -> project_types.id)
   - `created_at` (TIMESTAMP)
 
@@ -101,7 +101,7 @@ Quando um snippet for salvo, o sistema gerará um arquivo físico na pasta stora
 
 ```Markdown
 ---
-id: "123e4567-e89b-12d3-a456-426614174000"
+id: 1
 title: "Nginx Security Headers Default"
 type: "DevSecOps"
 tags: ["nginx", "security", "hardening"]
@@ -170,7 +170,7 @@ _(Nota: O parser do Node.js lerá o bloco `---` no topo para sincronizar com o M
 
 ### `GET /api/snippets/:id`
 
-- **Descrição:** Retorna os detalhes de um snippet específico. O Controller lê o arquivo `.md` físico pelo ID e retorna o conteúdo completo (Frontmatter + corpo) para renderização no Frontend.
+- **Descrição:** Retorna os detalhes de um snippet específico. A camada de **Service/Repository** lê o arquivo `.md` físico pelo ID; o **Controller** apenas recebe o resultado e devolve a resposta HTTP com o conteúdo completo (Frontmatter + corpo) para renderização no Frontend.
 
 ### `PUT /api/snippets/:id`
 
