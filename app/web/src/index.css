@@ -1,3 +1,187 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ============================================================
+   Temas (CSS vars = triplas RGB para suportar alpha do Tailwind)
+   ============================================================ */
+:root,
+[data-theme="dedsec"] {
+  --c-base: 7 9 12;
+  --c-surface: 13 17 23;
+  --c-panel: 17 22 29;
+  --c-line: 31 41 51;
+  --c-fg: 230 241 255;
+  --c-muted: 125 141 161;
+  --c-neon: 0 240 181;
+  --c-neon2: 255 46 136;
+  --c-danger: 255 77 77;
+}
+
+[data-theme="midnight"] {
+  --c-base: 11 15 23;
+  --c-surface: 19 23 34;
+  --c-panel: 26 32 48;
+  --c-line: 42 51 68;
+  --c-fg: 232 237 245;
+  --c-muted: 138 148 166;
+  --c-neon: 79 157 255;
+  --c-neon2: 167 139 250;
+  --c-danger: 248 113 113;
+}
+
+[data-theme="light"] {
+  --c-base: 245 247 250;
+  --c-surface: 255 255 255;
+  --c-panel: 255 255 255;
+  --c-line: 226 232 240;
+  --c-fg: 15 23 42;
+  --c-muted: 100 116 139;
+  --c-neon: 37 99 235;
+  --c-neon2: 219 39 119;
+  --c-danger: 220 38 38;
+}
+
+@layer base {
+  body {
+    @apply bg-base text-fg font-sans antialiased;
+    background-image:
+      radial-gradient(
+        ellipse at top,
+        rgb(var(--c-neon) / 0.06),
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse at bottom right,
+        rgb(var(--c-neon2) / 0.05),
+        transparent 50%
+      );
+    background-attachment: fixed;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display tracking-wide;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-lg border border-line/70 bg-surface/80 backdrop-blur-sm;
+  }
+  .neon-text {
+    color: rgb(var(--c-neon));
+    text-shadow: 0 0 8px rgb(var(--c-neon) / 0.55);
+  }
+  .field {
+    @apply w-full rounded-md border border-line bg-panel/70 px-3 py-2 text-sm text-fg
+      placeholder:text-muted/70 outline-none transition
+      focus:border-neon focus:shadow-neon-sm;
+  }
+  .label {
+    @apply mb-1 block font-mono text-xs uppercase tracking-widest text-muted;
+  }
+}
+
+/* ============================================================
+   Scanlines (efeito CRT) — toggle pela classe .scanlines no <html>
+   ============================================================ */
+.scanlines::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.035) 0px,
+    rgb(255 255 255 / 0.035) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+}
+
+/* ============================================================
+   Glitch — usado no logo/brand (data-text obrigatório)
+   ============================================================ */
+.glitch {
+  position: relative;
+  display: inline-block;
+}
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  overflow: hidden;
+}
+.glitch::before {
+  color: rgb(var(--c-neon2));
+  transform: translate(2px, 0);
+  animation: glitch-a 2.4s infinite linear alternate-reverse;
+}
+.glitch::after {
+  color: rgb(var(--c-neon));
+  transform: translate(-2px, 0);
+  animation: glitch-b 3.1s infinite linear alternate-reverse;
+}
+@keyframes glitch-a {
+  0% { clip-path: inset(0 0 86% 0); }
+  20% { clip-path: inset(30% 0 50% 0); }
+  40% { clip-path: inset(62% 0 18% 0); }
+  60% { clip-path: inset(12% 0 70% 0); }
+  80% { clip-path: inset(45% 0 35% 0); }
+  100% { clip-path: inset(78% 0 5% 0); }
+}
+@keyframes glitch-b {
+  0% { clip-path: inset(70% 0 12% 0); }
+  25% { clip-path: inset(15% 0 60% 0); }
+  50% { clip-path: inset(40% 0 40% 0); }
+  75% { clip-path: inset(5% 0 80% 0); }
+  100% { clip-path: inset(55% 0 25% 0); }
+}
+
+/* Linha de varredura do boot */
+@keyframes boot-scan {
+  from { transform: translateY(-110%); }
+  to { transform: translateY(110vh); }
+}
+.boot-scan {
+  animation: boot-scan 2.6s ease-in-out infinite;
+}
+
+/* Respeita preferências de acessibilidade e o toggle de animações */
+.no-anim *,
+.no-anim *::before,
+.no-anim *::after {
+  animation: none !important;
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Scrollbar temática */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: rgb(var(--c-base));
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--c-line));
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--c-neon) / 0.6);
+}

@@ -1,4 +1,7 @@
+import { Plus, Trash2 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
+
+import { Badge, Button, ErrorText, Input, Panel, SectionHeading } from "./ui";
 
 interface Entity {
   id: number;
@@ -7,6 +10,7 @@ interface Entity {
 
 interface TaxonomyPanelProps {
   title: string;
+  kicker: string;
   placeholder: string;
   list: () => Promise<Entity[]>;
   create: (name: string) => Promise<Entity>;
@@ -15,6 +19,7 @@ interface TaxonomyPanelProps {
 
 export function TaxonomyPanel({
   title,
+  kicker,
   placeholder,
   list,
   create,
@@ -65,49 +70,53 @@ export function TaxonomyPanel({
   }
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="mb-4 text-lg font-semibold text-slate-800">{title}</h2>
+    <Panel className="mx-auto max-w-2xl">
+      <SectionHeading
+        kicker={kicker}
+        title={title}
+        action={<Badge tone="muted">{items.length} registros</Badge>}
+      />
 
-      <form onSubmit={handleCreate} className="mb-4 flex gap-2">
-        <input
+      <form onSubmit={handleCreate} className="mb-5 flex gap-2">
+        <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={placeholder}
-          className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
         />
-        <button
-          type="submit"
-          disabled={busy}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-        >
-          Adicionar
-        </button>
+        <Button type="submit" disabled={busy}>
+          <Plus size={14} /> Add
+        </Button>
       </form>
 
-      {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+      {error && <div className="mb-3">{<ErrorText>{error}</ErrorText>}</div>}
 
-      <ul className="divide-y divide-slate-100">
+      <ul className="divide-y divide-line/60">
         {items.length === 0 && (
-          <li className="py-2 text-sm text-slate-400">Nenhum item ainda.</li>
+          <li className="py-3 font-mono text-xs text-muted">
+            // nenhum registro ainda
+          </li>
         )}
         {items.map((item) => (
           <li
             key={item.id}
-            className="flex items-center justify-between py-2 text-sm"
+            className="group flex items-center justify-between py-2.5 text-sm"
           >
-            <span className="text-slate-700">
-              <span className="mr-2 text-slate-400">#{item.id}</span>
-              {item.name}
+            <span className="flex items-center gap-3">
+              <span className="font-mono text-xs text-muted">
+                {String(item.id).padStart(3, "0")}
+              </span>
+              <span className="text-fg">{item.name}</span>
             </span>
             <button
               onClick={() => void handleDelete(item.id)}
-              className="text-xs font-medium text-red-500 hover:text-red-700"
+              className="text-muted opacity-0 transition group-hover:opacity-100 hover:text-danger"
+              aria-label={`remover ${item.name}`}
             >
-              remover
+              <Trash2 size={15} />
             </button>
           </li>
         ))}
       </ul>
-    </section>
+    </Panel>
   );
 }
