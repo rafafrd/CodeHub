@@ -1,8 +1,19 @@
+import { Plus, Search, Trash2 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
 import { api, ProjectType, Snippet, Tag } from "../lib/api";
+import {
+  Badge,
+  Button,
+  ErrorText,
+  Input,
+  Panel,
+  SectionHeading,
+  Select,
+  Textarea,
+} from "./ui";
 
-const emptyForm = {
+const EMPTY_FORM = {
   title: "",
   description: "",
   content: "",
@@ -15,7 +26,7 @@ export function SnippetsPanel() {
   const [types, setTypes] = useState<ProjectType[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [search, setSearch] = useState("");
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -67,7 +78,7 @@ export function SnippetsPanel() {
         tags: selectedTags,
         mermaid_flow: form.mermaidFlow.trim() || undefined,
       });
-      setForm(emptyForm);
+      setForm(EMPTY_FORM);
       setSelectedTags([]);
       await reload();
     } catch (err) {
@@ -88,31 +99,26 @@ export function SnippetsPanel() {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      {/* Formulário de criação */}
-      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-4 text-lg font-semibold text-slate-800">
-          Novo snippet
-        </h2>
+    <div className="grid gap-6 lg:grid-cols-5">
+      {/* Form */}
+      <Panel className="lg:col-span-2">
+        <SectionHeading kicker="// new entry" title="Novo snippet" />
         <form onSubmit={handleCreate} className="space-y-3">
-          <input
+          <Input
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             placeholder="Título"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
           />
-          <input
+          <Input
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="Descrição (opcional)"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
           />
-          <select
+          <Select
             value={form.typeId}
             onChange={(e) =>
               setForm({ ...form, typeId: Number(e.target.value) })
             }
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
           >
             <option value={0}>Selecione um tipo…</option>
             {types.map((t) => (
@@ -120,101 +126,109 @@ export function SnippetsPanel() {
                 {t.name}
               </option>
             ))}
-          </select>
-          <textarea
+          </Select>
+          <Textarea
             value={form.content}
             onChange={(e) => setForm({ ...form, content: e.target.value })}
-            placeholder="Conteúdo (código/config)…"
-            rows={5}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs focus:border-indigo-500 focus:outline-none"
+            placeholder="Conteúdo (código / config)…"
+            rows={6}
           />
-          <textarea
+          <Textarea
             value={form.mermaidFlow}
             onChange={(e) => setForm({ ...form, mermaidFlow: e.target.value })}
             placeholder="Fluxo Mermaid (opcional)…"
             rows={2}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs focus:border-indigo-500 focus:outline-none"
           />
 
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <label
-                key={tag.id}
-                className={`cursor-pointer rounded-full border px-3 py-1 text-xs ${
-                  selectedTags.includes(tag.id)
-                    ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                    : "border-slate-300 text-slate-600"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  className="hidden"
-                  checked={selectedTags.includes(tag.id)}
-                  onChange={() => toggleTag(tag.id)}
-                />
-                {tag.name}
-              </label>
-            ))}
-          </div>
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => {
+                const active = selectedTags.includes(tag.id);
+                return (
+                  <button
+                    type="button"
+                    key={tag.id}
+                    onClick={() => toggleTag(tag.id)}
+                    className={
+                      active
+                        ? "rounded-full border border-neon/60 bg-neon/10 px-3 py-1 font-mono text-xs text-neon shadow-neon-sm"
+                        : "rounded-full border border-line px-3 py-1 font-mono text-xs text-muted hover:border-neon/40 hover:text-fg"
+                    }
+                  >
+                    #{tag.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-          <button
-            type="submit"
-            disabled={busy}
-            className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-          >
-            Salvar snippet
-          </button>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          <Button type="submit" disabled={busy} className="w-full">
+            <Plus size={14} /> Salvar snippet
+          </Button>
+          {error && <ErrorText>{error}</ErrorText>}
         </form>
-      </section>
+      </Panel>
 
-      {/* Lista */}
-      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-4 flex items-center gap-2">
-          <input
+      {/* List */}
+      <Panel className="lg:col-span-3">
+        <SectionHeading
+          kicker="// inventory"
+          title="Snippets"
+          action={<Badge tone="muted">{snippets.length}</Badge>}
+        />
+
+        <div className="mb-4 flex gap-2">
+          <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por título/descrição…"
-            className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void reload();
+            }}
+            placeholder="Buscar por título / descrição…"
           />
-          <button
-            onClick={() => void reload()}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
-          >
-            Buscar
-          </button>
+          <Button variant="ghost" onClick={() => void reload()}>
+            <Search size={14} /> Buscar
+          </Button>
         </div>
 
         <ul className="space-y-2">
           {snippets.length === 0 && (
-            <li className="text-sm text-slate-400">Nenhum snippet encontrado.</li>
+            <li className="font-mono text-xs text-muted">
+              // nenhum snippet encontrado — crie um ao lado
+            </li>
           )}
           {snippets.map((s) => (
             <li
               key={s.id}
-              className="rounded-md border border-slate-100 p-3 text-sm"
+              className="group rounded-md border border-line/70 bg-panel/50 p-3 transition hover:border-neon/40"
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-medium text-slate-800">{s.title}</p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-fg">{s.title}</p>
                   {s.description && (
-                    <p className="text-slate-500">{s.description}</p>
+                    <p className="truncate text-sm text-muted">
+                      {s.description}
+                    </p>
                   )}
-                  <span className="mt-1 inline-block rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-                    {typeName(s.typeId)}
-                  </span>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Badge tone="neon2">{typeName(s.typeId)}</Badge>
+                    <span className="font-mono text-[10px] text-muted">
+                      {s.createdAt?.slice(0, 10)}
+                    </span>
+                  </div>
                 </div>
                 <button
                   onClick={() => void handleDelete(s.id)}
-                  className="text-xs font-medium text-red-500 hover:text-red-700"
+                  className="text-muted opacity-0 transition group-hover:opacity-100 hover:text-danger"
+                  aria-label={`remover ${s.title}`}
                 >
-                  remover
+                  <Trash2 size={15} />
                 </button>
               </div>
             </li>
           ))}
         </ul>
-      </section>
+      </Panel>
     </div>
   );
 }
