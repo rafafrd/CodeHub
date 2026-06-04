@@ -14,6 +14,7 @@ Ver `docs/ROADMAP.md` para o contexto das decisões.
 | Arquivo | Descrição |
 | --- | --- |
 | `migrations/001_initial_schema.sql` | Esquema inicial: `project_types`, `tags`, `snippets`, `snippet_tags`. |
+| `migrations/002_gamification_and_inventory.sql` | Gamificação (`profiles`, `achievements`, `user_achievements`) + inventário (`folders` + `snippets.folder_id`) + seeds (perfil, conquistas, taxonomia de pastas). |
 
 ## Como aplicar (manual, por enquanto)
 
