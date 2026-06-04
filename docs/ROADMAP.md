@@ -122,6 +122,18 @@ graph TD
 - [x] `infra/nginx/default.conf` (proxy reverso + headers de segurança OWASP do SDD)
 - [x] `.github/workflows/ci.yml` (lint + test + build) + `infra/README.md`
 
+## PR: Gamificação & Inventário (pivot) — branch `feature/gamificacao-inventario`
+
+Pivot do produto: XP/níveis/patentes + conquistas + inventário de pastas hierárquicas + tema cyberpunk. Entregue por fases:
+
+- [x] **Fase 1 — Migrations:** `002_gamification_and_inventory.sql` (`profiles`, `achievements`, `user_achievements`, `folders`; `snippets.folder_id`; seeds de conquistas e taxonomia de pastas).
+- [x] **Fase 2 — Services (TDD):** `domain/leveling` (curva XP 100/nível; patentes Bronze→Diamante), `AddXpService`, `UnlockAchievementService`, `CreateFolderService` — RED→GREEN, repos mockados.
+- [ ] **Fase 3 — Repositories:** mysql2 para `ProfileRepository`, `AchievementRepository`, `UserAchievementRepository`, `FolderRepository` (+ `folder_id` no snippet).
+- [ ] **Fase 4 — Controllers/Rotas/Zod:** `/api/profile`, `/api/achievements`, `/api/folders` (+ árvore) e orquestração XP-por-ação.
+- [ ] **Fase 5 — Frontend cyberpunk:** Dashboard (barra de XP, level, patente), toasts de conquista, aba Inventário (explorador de pastas). Reaproveita o tema da branch `feature/frontend-web`.
+
+> Regras de leveling/patente: `levelForXp(xp) = floor(xp/100)+1`; Bronze 1–4, Prata 5–9, Ouro 10–14, Platina 15–19, Diamante 20+.
+
 ## Mapeamento Casos de Uso (PDD) → Fases
 - **CU01** (Cadastrar snippet): Fases 3, 4, 5
 - **CU02** (Buscar por tipo/tag): Fase 4 (`list`) + 5
@@ -149,4 +161,5 @@ graph TD
 - **2026-05-30:** Fase 6 COMPLETA — CRUD de `types` e `tags` (8 services via TDD + controllers/rotas/Zod + integração). Total: 71 testes verdes. API expõe `/api/snippets`, `/api/types`, `/api/tags`.
 - **2026-05-30:** Fase 6 mergeada na `dev` (PR #6).
 - **2026-05-30:** Fase 7 COMPLETA — Dockerfile multi-stage (imagem validada: build + boot + `/health` ok), docker-compose (api+mysql+nginx, migration auto), Nginx com headers OWASP, CI. **MVP do backend concluído (Fases 0–7).**
-- **Backlog (melhorias futuras):** `DELETE /api/types/:id` em uso → mapear FK RESTRICT para 409; filtro de listagem por nome (SDD §5 `?type=devsecops`); testes de integração com banco real; HTTPS/TLS no Nginx; frontend (`app/web`).
+- **Backlog (melhorias futuras):** `DELETE /api/types/:id` em uso → mapear FK RESTRICT para 409; filtro de listagem por nome (SDD §5 `?type=devsecops`); testes de integração com banco real; HTTPS/TLS no Nginx.
+- **2026-06-04:** Iniciado o PR **Gamificação & Inventário** (`feature/gamificacao-inventario`, base `dev`). Fase 1 (migration `002`) e Fase 2 (services XP/conquista/pasta via TDD, 88 testes verdes) concluídas. Próximo: Repositories.
