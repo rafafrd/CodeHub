@@ -7,6 +7,7 @@ import "@fontsource/rajdhani/700.css";
 import "@fontsource/share-tech-mono/400.css";
 
 import { App } from "./App";
+import { GamificationProvider } from "./gamification/GamificationProvider";
 import { SettingsProvider } from "./theme/SettingsContext";
 import "./index.css";
 
@@ -18,7 +19,9 @@ if (!root) {
 createRoot(root).render(
   <StrictMode>
     <SettingsProvider>
-      <App />
+      <GamificationProvider>
+        <App />
+      </GamificationProvider>
     </SettingsProvider>
   </StrictMode>,
 );

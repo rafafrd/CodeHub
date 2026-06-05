@@ -2,7 +2,9 @@ import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Boxes,
+  FolderTree,
   HelpCircle,
+  LayoutDashboard,
   type LucideIcon,
   Settings as SettingsIcon,
   Tags as TagsIcon,
@@ -11,13 +13,22 @@ import {
 import { useState } from "react";
 
 import { BootIntro } from "./components/BootIntro";
+import { DashboardPanel } from "./components/DashboardPanel";
 import { HelpPanel } from "./components/HelpPanel";
+import { InventoryPanel } from "./components/InventoryPanel";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { SnippetsPanel } from "./components/SnippetsPanel";
 import { TaxonomyPanel } from "./components/TaxonomyPanel";
 import { api } from "./lib/api";
 
-type Tab = "snippets" | "types" | "tags" | "help" | "settings";
+type Tab =
+  | "profile"
+  | "snippets"
+  | "inventory"
+  | "types"
+  | "tags"
+  | "help"
+  | "settings";
 
 interface NavItem {
   id: Tab;
@@ -26,7 +37,9 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
+  { id: "profile", label: "Perfil", icon: LayoutDashboard },
   { id: "snippets", label: "Snippets", icon: Terminal },
+  { id: "inventory", label: "Inventário", icon: FolderTree },
   { id: "types", label: "Tipos", icon: Boxes },
   { id: "tags", label: "Tags", icon: TagsIcon },
   { id: "help", label: "Ajuda", icon: HelpCircle },
@@ -79,7 +92,7 @@ function NavButton({
 }
 
 export function App() {
-  const [tab, setTab] = useState<Tab>("snippets");
+  const [tab, setTab] = useState<Tab>("profile");
 
   return (
     <div className="flex min-h-screen">
@@ -100,7 +113,7 @@ export function App() {
         </nav>
         <div className="mt-auto pt-6 font-mono text-[10px] text-muted">
           <p>
-            v0.1.0 · <span className="text-neon">online</span>
+            v1.0.0 · <span className="text-neon">online</span>
           </p>
           <p className="mt-1 opacity-60">// stay anonymous</p>
         </div>
@@ -135,7 +148,9 @@ export function App() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25 }}
             >
+              {tab === "profile" && <DashboardPanel />}
               {tab === "snippets" && <SnippetsPanel />}
+              {tab === "inventory" && <InventoryPanel />}
               {tab === "types" && (
                 <TaxonomyPanel
                   title="Tipos de projeto"

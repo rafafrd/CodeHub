@@ -128,9 +128,12 @@ Pivot do produto: XP/níveis/patentes + conquistas + inventário de pastas hier�
 
 - [x] **Fase 1 — Migrations:** `002_gamification_and_inventory.sql` (`profiles`, `achievements`, `user_achievements`, `folders`; `snippets.folder_id`; seeds de conquistas e taxonomia de pastas).
 - [x] **Fase 2 — Services (TDD):** `domain/leveling` (curva XP 100/nível; patentes Bronze→Diamante), `AddXpService`, `UnlockAchievementService`, `CreateFolderService` — RED→GREEN, repos mockados.
-- [ ] **Fase 3 — Repositories:** mysql2 para `ProfileRepository`, `AchievementRepository`, `UserAchievementRepository`, `FolderRepository` (+ `folder_id` no snippet).
-- [ ] **Fase 4 — Controllers/Rotas/Zod:** `/api/profile`, `/api/achievements`, `/api/folders` (+ árvore) e orquestração XP-por-ação.
-- [ ] **Fase 5 — Frontend cyberpunk:** Dashboard (barra de XP, level, patente), toasts de conquista, aba Inventário (explorador de pastas). Reaproveita o tema da branch `feature/frontend-web`.
+- [x] **Fase 3 — Repositories:** mysql2 para `Profile`, `Achievement`, `UserAchievement`, `Folder` + `folder_id` no `SnippetRepository`.
+- [x] **Fase 4 — Controllers/Rotas/Zod:** `GET /api/profile`, `GET+POST /api/folders`; orquestração `GamificationEvents` (XP+conquista no create de snippet e pasta).
+- [x] **Fase 5 — Frontend cyberpunk:** Dashboard (barra de XP, level, patente, conquistas), toasts de gamificação, aba Inventário (explorador de pastas). Tema cyberpunk unificado.
+
+### ✅ CodeHub v1.0 (2026-06-04)
+Tema cyberpunk + gamificação + inventário **unificados na `dev`**. Backend 93 testes verdes; web buildando. API: `/api/snippets`, `/api/types`, `/api/tags`, `/api/profile`, `/api/folders`. Versão `1.0.0`.
 
 > Regras de leveling/patente: `levelForXp(xp) = floor(xp/100)+1`; Bronze 1–4, Prata 5–9, Ouro 10–14, Platina 15–19, Diamante 20+.
 
