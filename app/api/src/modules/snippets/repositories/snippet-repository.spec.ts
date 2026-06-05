@@ -19,12 +19,13 @@ describe("MySqlSnippetRepository", () => {
         title: "Docker Compose Base",
         description: null,
         typeId: 2,
+        folderId: null,
       });
 
       expect(id).toBe(42);
       const [sql, params] = execute.mock.calls[0];
       expect(sql).toContain("INSERT INTO snippets");
-      expect(params).toEqual(["Docker Compose Base", null, 2]);
+      expect(params).toEqual(["Docker Compose Base", null, 2, null]);
     });
   });
 

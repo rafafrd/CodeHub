@@ -4,6 +4,7 @@ import { SnippetRepository } from "../repositories/snippet-repository";
 export interface ListSnippetsInput {
   typeId?: number;
   tagId?: number;
+  folderId?: number;
   search?: string;
 }
 
@@ -20,6 +21,7 @@ export class ListSnippetsService {
     return this.snippetRepository.list({
       typeId: input.typeId,
       tagId: input.tagId,
+      folderId: input.folderId,
       search: search || undefined,
     });
   }

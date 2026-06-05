@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 
+import { DEFAULT_PROFILE_ID } from "../../gamification/default-profile";
+import { GamificationEvents } from "../../gamification/services/gamification-events";
 import { CreateSnippetService } from "../services/create-snippet-service";
 import { DeleteSnippetService } from "../services/delete-snippet-service";
 import { GetSnippetService } from "../services/get-snippet-service";
@@ -24,11 +26,22 @@ export class SnippetController {
     private readonly getSnippetService: GetSnippetService,
     private readonly updateSnippetService: UpdateSnippetService,
     private readonly deleteSnippetService: DeleteSnippetService,
+    private readonly gamification?: GamificationEvents,
   ) {}
 
   create = async (req: Request, res: Response): Promise<void> => {
     const input = createSnippetSchema.parse(req.body);
     const result = await this.createSnippetService.execute(input);
+
+    // Recompensa a ação (XP + conquista) quando a gamificação está plugada.
+    if (this.gamification) {
+      const gamification = await this.gamification.onSnippetCreated(
+        DEFAULT_PROFILE_ID,
+      );
+      res.status(201).json({ ...result, gamification });
+      return;
+    }
+
     res.status(201).json(result);
   };
 

@@ -11,6 +11,7 @@ describe("DeleteSnippetService", () => {
     description: null,
     filePath: "7.md",
     typeId: 2,
+    folderId: null,
     createdAt: new Date("2026-05-30T00:00:00Z"),
   };
 

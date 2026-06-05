@@ -3,6 +3,7 @@ import path from "node:path";
 import { Router } from "express";
 
 import { getPool } from "../../database/connection";
+import { buildGamificationEvents } from "../gamification/gamification-module";
 import { MySqlProjectTypeRepository } from "../types/repositories/project-type-repository";
 import { MySqlTagRepository } from "../tags/repositories/tag-repository";
 import { SnippetController } from "./controllers/snippet-controller";
@@ -44,6 +45,7 @@ export function buildSnippetRouter(): Router {
       tagRepository,
     ),
     new DeleteSnippetService(snippetRepository, fileSystemRepository),
+    buildGamificationEvents(),
   );
 
   return snippetRoutes(controller);

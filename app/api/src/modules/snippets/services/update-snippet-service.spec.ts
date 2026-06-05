@@ -16,6 +16,7 @@ describe("UpdateSnippetService", () => {
     description: null,
     filePath: "7.md",
     typeId: 1,
+    folderId: null,
     createdAt: new Date("2026-01-10T00:00:00Z"),
   };
 

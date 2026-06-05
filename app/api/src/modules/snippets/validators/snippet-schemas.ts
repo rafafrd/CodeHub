@@ -12,6 +12,7 @@ const snippetBodySchema = z
     type_id: z.number().int().positive(),
     tags: z.array(z.number().int().positive()).default([]),
     mermaid_flow: z.string().optional(),
+    folder_id: z.number().int().positive().nullable().optional(),
   })
   .transform((body) => ({
     title: body.title,
@@ -20,6 +21,7 @@ const snippetBodySchema = z
     typeId: body.type_id,
     tagIds: body.tags,
     mermaidFlow: body.mermaid_flow,
+    folderId: body.folder_id ?? null,
   }));
 
 export const createSnippetSchema = snippetBodySchema;
@@ -29,6 +31,7 @@ export const updateSnippetSchema = snippetBodySchema;
 export const listSnippetsQuerySchema = z.object({
   typeId: z.coerce.number().int().positive().optional(),
   tagId: z.coerce.number().int().positive().optional(),
+  folderId: z.coerce.number().int().positive().optional(),
   search: z.string().optional(),
 });
 

@@ -11,6 +11,7 @@ export interface CreateSnippetInput {
   typeId: number;
   tagIds: number[];
   mermaidFlow?: string;
+  folderId?: number | null;
 }
 
 export interface CreateSnippetResult {
@@ -63,6 +64,7 @@ export class CreateSnippetService {
       title,
       description,
       typeId: input.typeId,
+      folderId: input.folderId ?? null,
     });
 
     try {

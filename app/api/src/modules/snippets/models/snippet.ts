@@ -20,6 +20,8 @@ export interface Snippet {
   filePath: string | null;
   /** FK -> project_types.id */
   typeId: number;
+  /** FK -> folders.id (inventário). Nulo = snippet "solto", fora de pasta. */
+  folderId: number | null;
   createdAt: Date;
 }
 

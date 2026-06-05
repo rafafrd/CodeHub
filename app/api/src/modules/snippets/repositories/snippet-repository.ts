@@ -7,6 +7,7 @@ export interface CreateSnippetRecord {
   title: string;
   description: string | null;
   typeId: number;
+  folderId: number | null;
 }
 
 /** Dados de atualização de metadados. */
@@ -20,6 +21,7 @@ export interface UpdateSnippetRecord {
 export interface SnippetListFilters {
   typeId?: number;
   tagId?: number;
+  folderId?: number;
   search?: string;
 }
 
@@ -49,6 +51,7 @@ interface SnippetRow extends RowDataPacket {
   description: string | null;
   file_path: string | null;
   type_id: number;
+  folder_id: number | null;
   created_at: Date;
 }
 
@@ -57,8 +60,8 @@ export class MySqlSnippetRepository implements SnippetRepository {
 
   async create(data: CreateSnippetRecord): Promise<number> {
     const [result] = await this.pool.execute<ResultSetHeader>(
-      "INSERT INTO snippets (title, description, type_id) VALUES (?, ?, ?)",
-      [data.title, data.description, data.typeId],
+      "INSERT INTO snippets (title, description, type_id, folder_id) VALUES (?, ?, ?, ?)",
+      [data.title, data.description, data.typeId, data.folderId],
     );
 
     return result.insertId;
@@ -101,7 +104,7 @@ export class MySqlSnippetRepository implements SnippetRepository {
 
   async findById(id: number): Promise<Snippet | null> {
     const [rows] = await this.pool.execute<SnippetRow[]>(
-      "SELECT id, title, description, file_path, type_id, created_at FROM snippets WHERE id = ?",
+      "SELECT id, title, description, file_path, type_id, folder_id, created_at FROM snippets WHERE id = ?",
       [id],
     );
 
@@ -114,7 +117,7 @@ export class MySqlSnippetRepository implements SnippetRepository {
     const params: (string | number)[] = [];
 
     let sql =
-      "SELECT DISTINCT s.id, s.title, s.description, s.file_path, s.type_id, s.created_at FROM snippets s";
+      "SELECT DISTINCT s.id, s.title, s.description, s.file_path, s.type_id, s.folder_id, s.created_at FROM snippets s";
 
     if (filters.tagId !== undefined) {
       sql += " INNER JOIN snippet_tags st ON st.snippet_id = s.id";
@@ -124,6 +127,10 @@ export class MySqlSnippetRepository implements SnippetRepository {
     if (filters.typeId !== undefined) {
       clauses.push("s.type_id = ?");
       params.push(filters.typeId);
+    }
+    if (filters.folderId !== undefined) {
+      clauses.push("s.folder_id = ?");
+      params.push(filters.folderId);
     }
     if (filters.search) {
       clauses.push("(s.title LIKE ? OR s.description LIKE ?)");
@@ -150,6 +157,7 @@ export class MySqlSnippetRepository implements SnippetRepository {
       description: row.description,
       filePath: row.file_path,
       typeId: row.type_id,
+      folderId: row.folder_id,
       createdAt: row.created_at,
     };
   }
