@@ -1,3 +1,9 @@
+---
+title: "SDD - CodeHub"
+description: "Spec Driven Development: arquitetura, esquema do banco e contratos da API"
+updated_at: "2026-05-30"
+---
+
 # SDD - CodeHub (Spec Driven Development)
 
 ## 1. Visão Arquitetural
@@ -60,42 +66,32 @@ codehub/
 └── claude.md                    # Arquivo de contexto de IA
 ```
 
-3. Esquema de Banco de Dados (MySQL)
-   As tabelas principais focarão na taxonomia para facilitar as consultas.
+## 3. Esquema de Banco de Dados (MySQL)
 
-- project_types:
-  - `id` (PK, UUID ou Auto Increment)
-  - `name` (ex: "Node.js", "DevSecOps", "Frontend")
+As tabelas principais focam na taxonomia para facilitar as consultas.
+**Decisão de arquitetura:** IDs `INT UNSIGNED AUTO_INCREMENT`. O DDL canônico
+vive em `app/api/src/database/migrations/001_initial_schema.sql`.
 
-- tags:
-  - `id` (PK)
-  - `name` (ex: "middleware", "docker", "nginx", "security")
+- **project_types**
+  - `id` (PK, INT UNSIGNED AUTO_INCREMENT)
+  - `name` (VARCHAR, único — ex.: "Node.js", "DevSecOps", "Frontend")
 
-- snippets:
-- **snippets**:
-  - `id` (PK, UUID ou Auto Increment)
+- **tags**
+  - `id` (PK, INT UNSIGNED AUTO_INCREMENT)
+  - `name` (VARCHAR, único — ex.: "middleware", "docker", "nginx", "security")
+
+- **snippets**
+  - `id` (PK, INT UNSIGNED AUTO_INCREMENT)
   - `title` (VARCHAR)
-  - `description` (TEXT)
-  - `file_path` (VARCHAR - Caminho para o arquivo .md no File System)
+  - `description` (TEXT, nulo)
+  - `file_path` (VARCHAR, **nulo** até o `.md` ser gravado — ver fluxo de criação) — caminho para o arquivo no File System
   - `type_id` (FK -> project_types.id)
   - `created_at` (TIMESTAMP)
 
-- **snippet_tags** (Tabela pivô N:M):
+- **snippet_tags** (tabela pivô N:M)
   - `snippet_id` (FK -> snippets.id)
   - `tag_id` (FK -> tags.id)
-
-- snippet_tags (Tabela pivô N:M):
-  - `snippet_id` (FK -> snippets.id)
-  - `tag_id` (FK -> tags.id)
-  - `id` (PK)
-  - `title` (VARCHAR)
-  - `description` (TEXT)
-  - `file_path` (VARCHAR - Caminho para o arquivo .md no File System)
-  - `type_id` (FK -> project_types.id)
-  - `created_at` (TIMESTAMP)
-  - `snippet_tags` (Tabela pivô N:M):
-  - `snippet_id` (FK -> snippets.id)
-  - `tag_id` (FK -> tags.id)
+  - PK composta (`snippet_id`, `tag_id`)
 
 ---
 
@@ -105,7 +101,7 @@ Quando um snippet for salvo, o sistema gerará um arquivo físico na pasta stora
 
 ```Markdown
 ---
-id: "123e4567-e89b-12d3-a456-426614174000"
+id: 1
 title: "Nginx Security Headers Default"
 type: "DevSecOps"
 tags: ["nginx", "security", "hardening"]
@@ -156,27 +152,30 @@ _(Nota: O parser do Node.js lerá o bloco `---` no topo para sincronizar com o M
 - **Body:**
 
 ```json
-  {
-    "title": "Nginx Security Headers Default",
-    "description": "Headers de segurança básicos",
-    "content": "add_header X-Frame-Options...",
-    "type_id": 2,
-    "tags": [1, 5, 8],
-    "mermaid_flow": "graph TD\nClient --> Nginx..."
-  }
-GET /api/snippets
-Descrição: Lista snippets com paginação e filtros.
-
-Query Params: ?type=devsecops, ?tag=nginx, ?search=headers
-
-Response: Retorna array de objetos com os metadados.
-
-GET /api/snippets/:id
-Descrição: Retorna os detalhes de um snippet específico. O Controller deverá ler o arquivo .md físico através do ID e retornar o conteúdo completo (Frontmatter + Corpo) para ser renderizado no Frontend.
-
-PUT /api/snippets/:id
-Descrição: Atualiza metadados no banco e reescreve o arquivo .md.
-
-DELETE /api/snippets/:id
-Descrição: Remove o registro do banco de dados e apaga o arquivo físico da pasta storage/.
+{
+  "title": "Nginx Security Headers Default",
+  "description": "Headers de segurança básicos",
+  "content": "add_header X-Frame-Options...",
+  "type_id": 2,
+  "tags": [1, 5, 8],
+  "mermaid_flow": "graph TD\nClient --> Nginx..."
+}
 ```
+
+### `GET /api/snippets`
+
+- **Descrição:** Lista snippets com paginação e filtros.
+- **Query params:** `?type=devsecops`, `?tag=nginx`, `?search=headers`
+- **Response:** array de objetos com os metadados.
+
+### `GET /api/snippets/:id`
+
+- **Descrição:** Retorna os detalhes de um snippet específico. A camada de **Service/Repository** lê o arquivo `.md` físico pelo ID; o **Controller** apenas recebe o resultado e devolve a resposta HTTP com o conteúdo completo (Frontmatter + corpo) para renderização no Frontend.
+
+### `PUT /api/snippets/:id`
+
+- **Descrição:** Atualiza os metadados no banco e reescreve o arquivo `.md`.
+
+### `DELETE /api/snippets/:id`
+
+- **Descrição:** Remove o registro do banco de dados e apaga o arquivo físico em `storage/`.

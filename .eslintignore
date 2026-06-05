@@ -1,0 +1,7 @@
+node_modules
+dist
+build
+coverage
+
+# Frontend tem seu próprio toolchain (Vite/tsc); não é lintado pela config da API.
+app/web

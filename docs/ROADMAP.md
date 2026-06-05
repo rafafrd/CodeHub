@@ -1,7 +1,7 @@
 ---
 title: "ROADMAP - CodeHub"
 description: "Plano de execução e rastreador de progresso para retomada entre sessões"
-status: "em andamento"
+status: "MVP concluído (Fases 0–7)"
 updated_at: "2026-05-30"
 ---
 
@@ -71,50 +71,71 @@ graph TD
 
 ## Checklist de Progresso
 
-### Fase 0 — Fundação do Monorepo
-- [ ] `package.json` raiz com `workspaces: ["app/*"]`
-- [ ] `.gitignore`, `.eslintrc.json`, `.eslintignore`, `.prettierrc` globais
-- [ ] `tsconfig.base.json` na raiz
-- [ ] (Opcional, recomendado) `git init` para versionar o histórico
+### Fase 0 — Fundação do Monorepo ✅ (2026-05-30)
+- [x] `package.json` raiz com `workspaces: ["app/*"]`
+- [x] `.gitignore` (expandido), `.eslintrc.json`, `.eslintignore`, `.prettierrc` globais
+- [x] `tsconfig.base.json` na raiz
+- [x] Repositório git já existia (origin: github.com/rafafrd/CodeHub) — `git init` desnecessário
 
-### Fase 1 — Scaffold `app/api/`
-- [ ] `app/api/package.json` (deps: `express`, `mysql2`, `zod`, `gray-matter`; dev: `typescript`, `jest`, `ts-jest`, `@types/*`, `supertest`)
-- [ ] `app/api/tsconfig.json` + `jest.config.ts` (scripts `test`, `test:watch`, `test:coverage`)
-- [ ] Estrutura de pastas `src/modules/{snippets,types,tags}` + `src/shared/{http,errors}`
-- [ ] `shared/errors/app-error.ts` (classe de erro de domínio)
-- [ ] `shared/http/server.ts` + `shared/http/routes.ts` (sobe Express)
+### Fase 1 — Scaffold `app/api/` ✅ (2026-05-30)
+- [x] `app/api/package.json` (deps: `express`, `mysql2`, `zod`, `gray-matter`; dev: `typescript`, `jest`, `ts-jest`, `@types/*`, `supertest`)
+- [x] `app/api/tsconfig.json` + `jest.config.ts` (scripts `test`, `test:watch`, `test:coverage`)
+- [x] Estrutura de pastas `src/modules/{snippets,types,tags}` + `src/shared/{http,errors}` (com `.gitkeep`)
+- [x] `shared/errors/app-error.ts` (+ `.spec.ts`) — classe de erro de domínio
+- [x] `shared/http/app.ts` (app testável) + `server.ts` + `routes.ts` (`/health`) + smoke test
+- [x] Verificado: `npm test` (3 ok) + `npm run build` + `npm run lint` passando
 
-### Fase 2 — Modelos de Domínio + Esquema Canônico
-- [ ] `modules/snippets/models/snippet.ts` (+ tipos de `types` e `tags`)
-- [ ] Migration SQL com o esquema canônico acima
-- [ ] Consolidar/limpar `SDD.md` §3 e §5 (ou referenciar este ROADMAP como fonte)
+### Fase 2 — Modelos de Domínio + Esquema Canônico ✅ (2026-05-30)
+- [x] `modules/snippets/models/snippet.ts` (+ `types/models/project-type.ts`, `tags/models/tag.ts`)
+- [x] Migration SQL com o esquema canônico → `app/api/src/database/migrations/001_initial_schema.sql` (+ README)
+- [x] `SDD.md` §3 e §5 corrigidas + Frontmatter adicionado
 
-### Fase 3 — Repositories
-- [ ] `repositories/file-system-repository.ts` (gera/lê/atualiza/apaga `.md` via gray-matter)
-- [ ] `repositories/snippet-repository.ts` (mysql2: insert/select/update/delete + pivô de tags)
-- [ ] Interfaces dos repositories (para mock nos Services)
+### Fase 3 — Repositories ✅ (2026-05-30)
+- [x] `repositories/file-system-repository.ts` + `.spec.ts` (gera/lê/apaga `.md` via gray-matter; fs mockado)
+- [x] `repositories/snippet-repository.ts` + `.spec.ts` (mysql2: create/updateFilePath/attachTags/findById/list/delete)
+- [x] Interfaces `FileSystemRepository` e `SnippetRepository` (para mock nos Services na Fase 4)
+- [x] `database/connection.ts` (pool mysql2) + `Snippet.filePath` agora `string | null`
 
-### Fase 4 — Services (TDD estrito — coração do projeto)
-- [ ] **`create-snippet-service.spec.ts` (RED) → `create-snippet-service.ts` (GREEN) → REFACTOR**  ⭐ primeiro alvo de TDD
-- [ ] `list-snippets-service` (filtros: type, tag, search) — CU02
-- [ ] `get-snippet-service` (lê o `.md` físico) — CU03
-- [ ] `update-snippet-service`
-- [ ] `delete-snippet-service`
+### Fase 4 — Services (TDD estrito — coração do projeto) ✅ (2026-05-30)
+- [x] **`create-snippet-service`** ✅ (RED→GREEN, 6 testes): valida regra, resolve type/tags (id→nome), INSERT, grava `.md`, update path, attach tags, compensação em falha. Deps de leitura criadas: `ProjectTypeRepository.findById` e `TagRepository.findByIds`.
+- [x] `list-snippets-service` (filtros type/tag/search; normaliza busca) — CU02 ✅
+- [x] `get-snippet-service` (lê o `.md` via `FileSystemRepository.read`; 404 se ausente) — CU03 ✅
+- [x] `update-snippet-service` (reescreve metadados + `.md`; preserva `created_at`; `replaceTags`) ✅
+- [x] `delete-snippet-service` (apaga arquivo + registro; pivô em cascata) ✅
+- [x] `SnippetRepository` estendido: `update` + `replaceTags` (com specs)
 
-### Fase 5 — Controllers + Routes + Validação
-- [ ] Schemas Zod de entrada
-- [ ] `create-snippet-controller.ts` + `snippet-routes.ts`
-- [ ] Plugar rotas no `shared/http/routes.ts`
-- [ ] Testes de integração (supertest): 200/201/400/404
+### Fase 5 — Controllers + Routes + Validação ✅ (2026-05-30)
+- [x] Schemas Zod (`snippet-schemas.ts`): body snake_case (SDD §5) → input camelCase; query e `:id`
+- [x] `SnippetController` (5 ações) + `snippet-routes.ts` (injeção do controller) + `snippet-module.ts` (composição)
+- [x] Rotas plugadas em `shared/http/routes.ts` (`/api/snippets`); `errorHandler` central + `asyncHandler`
+- [x] Testes de integração (supertest): 201/400/200/404/204 — Services mockados
+- [x] `.eslintrc`: `no-unused-vars` com `argsIgnorePattern: ^_` (error handler do Express tem 4 args)
 
-### Fase 6 — Módulos `types` e `tags`
-- [ ] CRUD de `project_types`
-- [ ] CRUD de `tags`
+### Fase 6 — Módulos `types` e `tags` ✅ (2026-05-30)
+- [x] CRUD de `project_types`: repo estendido + 4 services (TDD) + controller/rotas/Zod + integração → `/api/types`
+- [x] CRUD de `tags`: repo estendido + 4 services (TDD) + controller/rotas/Zod + integração → `/api/tags`
+- [x] Unicidade de nome validada nos services (409); rotas plugadas em `shared/http/routes.ts`
 
-### Fase 7 — Infraestrutura
-- [ ] `infra/` Dockerfile (api) + `docker-compose.yml` (api + mysql)
-- [ ] `infra/` config Nginx (proxy reverso + headers de segurança do SDD)
-- [ ] `.github/workflows/` (lint + test no CI)
+### Fase 7 — Infraestrutura ✅ (2026-05-30)
+- [x] `app/api/Dockerfile` (multi-stage) + `.dockerignore` — **imagem validada (build + boot + /health)**
+- [x] `infra/docker-compose.yml` (api + mysql + nginx; migration `001` auto-aplicada via initdb)
+- [x] `infra/nginx/default.conf` (proxy reverso + headers de segurança OWASP do SDD)
+- [x] `.github/workflows/ci.yml` (lint + test + build) + `infra/README.md`
+
+## PR: Gamificação & Inventário (pivot) — branch `feature/gamificacao-inventario`
+
+Pivot do produto: XP/níveis/patentes + conquistas + inventário de pastas hierárquicas + tema cyberpunk. Entregue por fases:
+
+- [x] **Fase 1 — Migrations:** `002_gamification_and_inventory.sql` (`profiles`, `achievements`, `user_achievements`, `folders`; `snippets.folder_id`; seeds de conquistas e taxonomia de pastas).
+- [x] **Fase 2 — Services (TDD):** `domain/leveling` (curva XP 100/nível; patentes Bronze→Diamante), `AddXpService`, `UnlockAchievementService`, `CreateFolderService` — RED→GREEN, repos mockados.
+- [x] **Fase 3 — Repositories:** mysql2 para `Profile`, `Achievement`, `UserAchievement`, `Folder` + `folder_id` no `SnippetRepository`.
+- [x] **Fase 4 — Controllers/Rotas/Zod:** `GET /api/profile`, `GET+POST /api/folders`; orquestração `GamificationEvents` (XP+conquista no create de snippet e pasta).
+- [x] **Fase 5 — Frontend cyberpunk:** Dashboard (barra de XP, level, patente, conquistas), toasts de gamificação, aba Inventário (explorador de pastas). Tema cyberpunk unificado.
+
+### ✅ CodeHub v1.0 (2026-06-04)
+Tema cyberpunk + gamificação + inventário **unificados na `dev`**. Backend 93 testes verdes; web buildando. API: `/api/snippets`, `/api/types`, `/api/tags`, `/api/profile`, `/api/folders`. Versão `1.0.0`.
+
+> Regras de leveling/patente: `levelForXp(xp) = floor(xp/100)+1`; Bronze 1–4, Prata 5–9, Ouro 10–14, Platina 15–19, Diamante 20+.
 
 ## Mapeamento Casos de Uso (PDD) → Fases
 - **CU01** (Cadastrar snippet): Fases 3, 4, 5
@@ -130,5 +151,18 @@ graph TD
 
 ## Log de Decisões e Pendências
 - **2026-05-30:** Definidas as 4 decisões de arquitetura (mysql2 / Auto Increment / Zod / npm workspaces).
-- **Pendência:** Limpar `SDD.md` §3 (tabelas duplicadas) e §5 (endpoints presos no bloco JSON). Fonte da verdade temporária = este ROADMAP.
-- **Aguardando:** confirmação do usuário sobre o ponto de partida (sugestão: Fase 0 → Fase 1 → primeiro TDD em `CreateSnippetService`).
+- **2026-05-30:** Fases 0 e 1 concluídas na branch `feature/fase-0-1-fundacao-e-scaffold-api` e mergeadas na `dev`.
+- **2026-05-30:** Fase 2 concluída na branch `feature/fase-2-modelos-e-schema`: modelos de domínio, migration `001` e correção do `SDD.md` (§3/§5). ✅ Pendência da §3/§5 resolvida.
+- **2026-05-30:** ✅ Pendência nome-vs-id RESOLVIDA na Fase 4: o contrato de entrada do `CreateSnippetService` usa **IDs** (`typeId`/`tagIds`, conforme `SDD.md` §5). O Service resolve os **nomes** internamente (via `ProjectTypeRepository`/`TagRepository`) para gravar o Frontmatter legível (`SDD.md` §4). O exemplo do `TDD.md` com nomes era ilustrativo.
+- **2026-05-30:** Review do Copilot no PR da Fase 2 — aplicados 4 ajustes (aprovados): `file_path` agora `NULL` (compatível com o fluxo insert→arquivo→update); SDD §5 `GET/:id` corrige violação de camadas (FS no Service/Repo, não no Controller); IDs padronizados para `INT UNSIGNED AUTO_INCREMENT` no SDD; exemplo de Frontmatter (§4) com `id` inteiro (não UUID).
+- **2026-05-30:** Fase 3 (repositories) mergeada na `dev` (PR #3).
+- **2026-05-30:** Fase 4 COMPLETA — 5 services (create/list/get/update/delete) via TDD, 36 testes verdes. Repo estendido com `update`/`replaceTags`.
+- **2026-05-30:** Fase 4 mergeada na `dev` (PR #4).
+- **2026-05-30:** Fase 5 COMPLETA — camada HTTP de snippets (controller + rotas + Zod + error handler), 42 testes verdes (6 de integração). API responde de ponta a ponta em `/api/snippets`.
+- **Decisão Fase 5:** filtros de listagem por **id** (`?typeId=&tagId=&search=`), consistente com o contrato id-based. O exemplo do SDD §5 com nomes (`?type=devsecops`) fica para a Fase 6 (quando houver lookup de tipo/tag por nome).
+- **2026-05-30:** Fase 5 mergeada na `dev` (PR #5).
+- **2026-05-30:** Fase 6 COMPLETA — CRUD de `types` e `tags` (8 services via TDD + controllers/rotas/Zod + integração). Total: 71 testes verdes. API expõe `/api/snippets`, `/api/types`, `/api/tags`.
+- **2026-05-30:** Fase 6 mergeada na `dev` (PR #6).
+- **2026-05-30:** Fase 7 COMPLETA — Dockerfile multi-stage (imagem validada: build + boot + `/health` ok), docker-compose (api+mysql+nginx, migration auto), Nginx com headers OWASP, CI. **MVP do backend concluído (Fases 0–7).**
+- **Backlog (melhorias futuras):** `DELETE /api/types/:id` em uso → mapear FK RESTRICT para 409; filtro de listagem por nome (SDD §5 `?type=devsecops`); testes de integração com banco real; HTTPS/TLS no Nginx.
+- **2026-06-04:** Iniciado o PR **Gamificação & Inventário** (`feature/gamificacao-inventario`, base `dev`). Fase 1 (migration `002`) e Fase 2 (services XP/conquista/pasta via TDD, 88 testes verdes) concluídas. Próximo: Repositories.

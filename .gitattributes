@@ -1,0 +1,9 @@
+# Normaliza finais de linha para LF no repositório (evita ruído CRLF/LF entre SO).
+* text=auto eol=lf
+
+# Arquivos binários não devem ser normalizados.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
