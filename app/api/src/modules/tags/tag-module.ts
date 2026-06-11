@@ -1,8 +1,8 @@
 import { Router } from "express";
 
-import { getPool } from "../../database/connection";
+import { getDb } from "../../database/sqlite";
 import { TagController } from "./controllers/tag-controller";
-import { MySqlTagRepository } from "./repositories/tag-repository";
+import { SqliteTagRepository } from "./repositories/tag-repository";
 import { tagRoutes } from "./routes/tag-routes";
 import { CreateTagService } from "./services/create-tag-service";
 import { DeleteTagService } from "./services/delete-tag-service";
@@ -11,7 +11,7 @@ import { UpdateTagService } from "./services/update-tag-service";
 
 /** Raiz de composição do módulo de tags. */
 export function buildTagRouter(): Router {
-  const repository = new MySqlTagRepository(getPool());
+  const repository = new SqliteTagRepository(getDb);
 
   const controller = new TagController(
     new CreateTagService(repository),

@@ -16,11 +16,24 @@ describe("CreateProjectTypeService", () => {
     );
   });
 
-  it("deve criar um tipo de projeto", async () => {
+  it("deve criar um tipo de projeto com behavior padrão snippet", async () => {
     const result = await service.execute({ name: "DevSecOps" });
 
-    expect(result).toEqual({ id: 3, name: "DevSecOps" });
-    expect(repository.create).toHaveBeenCalledWith({ name: "DevSecOps" });
+    expect(result).toEqual({ id: 3, name: "DevSecOps", behavior: "snippet" });
+    expect(repository.create).toHaveBeenCalledWith({
+      name: "DevSecOps",
+      behavior: "snippet",
+    });
+  });
+
+  it("deve aceitar um behavior explícito", async () => {
+    const result = await service.execute({ name: "Regexes", behavior: "regex" });
+
+    expect(result.behavior).toBe("regex");
+    expect(repository.create).toHaveBeenCalledWith({
+      name: "Regexes",
+      behavior: "regex",
+    });
   });
 
   it("não deve permitir nome vazio", async () => {

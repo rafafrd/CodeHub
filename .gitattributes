@@ -7,3 +7,6 @@
 *.jpeg binary
 *.gif binary
 *.ico binary
+
+# Banco SQLite ("save state" do CodeHub) — binário versionado no Git.
+*.sqlite binary

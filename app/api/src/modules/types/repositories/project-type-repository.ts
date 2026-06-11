@@ -1,73 +1,64 @@
-import { Pool, ResultSetHeader, RowDataPacket } from "mysql2/promise";
-
-import { ProjectType } from "../models/project-type";
+import { GetDb } from "../../../database/sqlite";
+import { Behavior, ProjectType } from "../models/project-type";
 
 export interface ProjectTypeData {
   name: string;
+  behavior: Behavior;
 }
 
-/**
- * Repositório de tipos de projeto (CRUD completo — Fase 6).
- * `findById` já era usado pelos Services de snippet na Fase 4.
- */
+/** Repositório de tipos de artefato (CRUD + lookup por nome). */
 export interface ProjectTypeRepository {
   create(data: ProjectTypeData): Promise<number>;
   findAll(): Promise<ProjectType[]>;
   findById(id: number): Promise<ProjectType | null>;
   findByName(name: string): Promise<ProjectType | null>;
-  update(id: number, data: ProjectTypeData): Promise<void>;
+  update(id: number, data: { name: string }): Promise<void>;
   delete(id: number): Promise<void>;
 }
 
-interface ProjectTypeRow extends RowDataPacket {
+interface ProjectTypeRow {
   id: number;
   name: string;
+  behavior: Behavior;
 }
 
-export class MySqlProjectTypeRepository implements ProjectTypeRepository {
-  constructor(private readonly pool: Pool) {}
+export class SqliteProjectTypeRepository implements ProjectTypeRepository {
+  constructor(private readonly db: GetDb) {}
 
   async create(data: ProjectTypeData): Promise<number> {
-    const [result] = await this.pool.execute<ResultSetHeader>(
-      "INSERT INTO project_types (name) VALUES (?)",
-      [data.name],
-    );
-    return result.insertId;
+    const info = this.db()
+      .prepare("INSERT INTO project_types (name, behavior) VALUES (?, ?)")
+      .run(data.name, data.behavior);
+    return Number(info.lastInsertRowid);
   }
 
   async findAll(): Promise<ProjectType[]> {
-    const [rows] = await this.pool.execute<ProjectTypeRow[]>(
-      "SELECT id, name FROM project_types ORDER BY name",
-    );
-    return rows.map((row) => ({ id: row.id, name: row.name }));
+    return this.db()
+      .prepare("SELECT id, name, behavior FROM project_types ORDER BY name")
+      .all() as ProjectTypeRow[];
   }
 
   async findById(id: number): Promise<ProjectType | null> {
-    const [rows] = await this.pool.execute<ProjectTypeRow[]>(
-      "SELECT id, name FROM project_types WHERE id = ?",
-      [id],
-    );
-    const row = rows[0];
-    return row ? { id: row.id, name: row.name } : null;
+    const row = this.db()
+      .prepare("SELECT id, name, behavior FROM project_types WHERE id = ?")
+      .get(id) as ProjectTypeRow | undefined;
+    return row ?? null;
   }
 
   async findByName(name: string): Promise<ProjectType | null> {
-    const [rows] = await this.pool.execute<ProjectTypeRow[]>(
-      "SELECT id, name FROM project_types WHERE name = ?",
-      [name],
-    );
-    const row = rows[0];
-    return row ? { id: row.id, name: row.name } : null;
+    const row = this.db()
+      .prepare("SELECT id, name, behavior FROM project_types WHERE name = ?")
+      .get(name) as ProjectTypeRow | undefined;
+    return row ?? null;
   }
 
-  async update(id: number, data: ProjectTypeData): Promise<void> {
-    await this.pool.execute("UPDATE project_types SET name = ? WHERE id = ?", [
-      data.name,
-      id,
-    ]);
+  async update(id: number, data: { name: string }): Promise<void> {
+    this.db()
+      .prepare("UPDATE project_types SET name = ? WHERE id = ?")
+      .run(data.name, id);
   }
 
   async delete(id: number): Promise<void> {
-    await this.pool.execute("DELETE FROM project_types WHERE id = ?", [id]);
+    this.db().prepare("DELETE FROM project_types WHERE id = ?").run(id);
   }
 }

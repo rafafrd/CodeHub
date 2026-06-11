@@ -14,6 +14,10 @@ describe("UnlockAchievementService", () => {
     name: "Primeiro Script",
     description: null,
     xpReward: 50,
+    category: "arquivista",
+    triggerKind: "count_snippets_total",
+    triggerParam: null,
+    threshold: 1,
   };
 
   let achievements: { findByCode: jest.Mock };

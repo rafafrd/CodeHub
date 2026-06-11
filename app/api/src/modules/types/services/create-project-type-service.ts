@@ -1,9 +1,11 @@
 import { AppError } from "../../../shared/errors/app-error";
-import { ProjectType } from "../models/project-type";
+import { Behavior, ProjectType } from "../models/project-type";
 import { ProjectTypeRepository } from "../repositories/project-type-repository";
 
 export interface CreateProjectTypeInput {
   name: string;
+  /** Comportamento de renderização/uso; padrão "snippet". */
+  behavior?: Behavior;
 }
 
 export class CreateProjectTypeService {
@@ -20,7 +22,8 @@ export class CreateProjectTypeService {
       throw new AppError("Já existe um tipo com esse nome.", 409);
     }
 
-    const id = await this.repository.create({ name });
-    return { id, name };
+    const behavior: Behavior = input.behavior ?? "snippet";
+    const id = await this.repository.create({ name, behavior });
+    return { id, name, behavior };
   }
 }

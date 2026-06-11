@@ -18,8 +18,8 @@ export class ProjectTypeController {
   ) {}
 
   create = async (req: Request, res: Response): Promise<void> => {
-    const { name } = projectTypeBodySchema.parse(req.body);
-    const result = await this.createService.execute({ name });
+    const { name, behavior } = projectTypeBodySchema.parse(req.body);
+    const result = await this.createService.execute({ name, behavior });
     res.status(201).json(result);
   };
 

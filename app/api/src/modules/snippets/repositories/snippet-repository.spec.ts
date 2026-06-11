@@ -1,153 +1,106 @@
-import { Pool } from "mysql2/promise";
+import Database from "better-sqlite3";
 
-import { MySqlSnippetRepository } from "./snippet-repository";
+import { runMigrations } from "../../../database/sqlite";
+import { SqliteSnippetRepository } from "./snippet-repository";
 
-function makePoolMock(): { pool: Pool; execute: jest.Mock } {
-  const execute = jest.fn().mockResolvedValue([[], []]);
-  const pool = { execute } as unknown as Pool;
-  return { pool, execute };
-}
+/**
+ * Teste de INTEGRAÇÃO real: SQLite em memória com as migrations aplicadas
+ * (schema + seeds de tipos/pastas/conquistas). Sem mocks de banco.
+ */
+describe("SqliteSnippetRepository (integração :memory:)", () => {
+  let db: Database.Database;
+  let repository: SqliteSnippetRepository;
 
-describe("MySqlSnippetRepository", () => {
-  describe("create", () => {
-    it("deve inserir os metadados e retornar o insertId", async () => {
-      const { pool, execute } = makePoolMock();
-      execute.mockResolvedValueOnce([{ insertId: 42 }, []]);
-      const repository = new MySqlSnippetRepository(pool);
-
-      const id = await repository.create({
-        title: "Docker Compose Base",
-        description: null,
-        typeId: 2,
-        folderId: null,
-      });
-
-      expect(id).toBe(42);
-      const [sql, params] = execute.mock.calls[0];
-      expect(sql).toContain("INSERT INTO snippets");
-      expect(params).toEqual(["Docker Compose Base", null, 2, null]);
-    });
+  beforeEach(() => {
+    db = new Database(":memory:");
+    db.pragma("foreign_keys = ON");
+    runMigrations(db);
+    repository = new SqliteSnippetRepository(() => db);
   });
 
-  describe("attachTags", () => {
-    it("não deve executar query quando não há tags", async () => {
-      const { pool, execute } = makePoolMock();
-      const repository = new MySqlSnippetRepository(pool);
+  afterEach(() => db.close());
 
-      await repository.attachTags(1, []);
-
-      expect(execute).not.toHaveBeenCalled();
+  async function createSample(title = "Nginx Headers"): Promise<number> {
+    return repository.create({
+      title,
+      description: "Headers OWASP",
+      typeId: 6, // Config de Servidor (seed)
+      folderId: 4, // Infraestrutura > Nginx (seed)
     });
+  }
 
-    it("deve montar um bulk insert com os pares (snippet_id, tag_id)", async () => {
-      const { pool, execute } = makePoolMock();
-      const repository = new MySqlSnippetRepository(pool);
+  it("cria e lê um snippet (insert + mapeamento snake_case -> camelCase)", async () => {
+    const id = await createSample();
 
-      await repository.attachTags(10, [3, 5]);
+    const found = await repository.findById(id);
 
-      const [sql, params] = execute.mock.calls[0];
-      expect(sql).toContain("INSERT INTO snippet_tags");
-      expect(sql).toContain("(?, ?), (?, ?)");
-      expect(params).toEqual([10, 3, 10, 5]);
-    });
+    expect(found).not.toBeNull();
+    expect(found?.title).toBe("Nginx Headers");
+    expect(found?.typeId).toBe(6);
+    expect(found?.folderId).toBe(4);
+    expect(found?.filePath).toBeNull();
+    expect(found?.createdAt).toBeInstanceOf(Date);
   });
 
-  describe("list", () => {
-    it("deve combinar filtros de tag, tipo e busca na cláusula WHERE", async () => {
-      const { pool, execute } = makePoolMock();
-      const repository = new MySqlSnippetRepository(pool);
+  it("atualiza o file_path após a materialização do .md", async () => {
+    const id = await createSample();
 
-      await repository.list({ typeId: 2, tagId: 5, search: "headers" });
+    await repository.updateFilePath(id, `${id}.md`);
 
-      const [sql, params] = execute.mock.calls[0];
-      expect(sql).toContain("INNER JOIN snippet_tags");
-      expect(sql).toContain("st.tag_id = ?");
-      expect(sql).toContain("s.type_id = ?");
-      expect(sql).toContain("LIKE ?");
-      expect(params).toEqual([5, 2, "%headers%", "%headers%"]);
-    });
-
-    it("deve mapear a linha do banco para o domínio (snake_case -> camelCase)", async () => {
-      const { pool, execute } = makePoolMock();
-      const createdAt = new Date("2026-05-30T00:00:00Z");
-      execute.mockResolvedValueOnce([
-        [
-          {
-            id: 1,
-            title: "Snippet",
-            description: null,
-            file_path: "1.md",
-            type_id: 2,
-            created_at: createdAt,
-          },
-        ],
-        [],
-      ]);
-      const repository = new MySqlSnippetRepository(pool);
-
-      const [snippet] = await repository.list();
-
-      expect(snippet).toEqual({
-        id: 1,
-        title: "Snippet",
-        description: null,
-        filePath: "1.md",
-        typeId: 2,
-        createdAt,
-      });
-    });
+    expect((await repository.findById(id))?.filePath).toBe(`${id}.md`);
   });
 
-  describe("findById", () => {
-    it("deve retornar null quando não encontrar o snippet", async () => {
-      const { pool } = makePoolMock();
-      const repository = new MySqlSnippetRepository(pool);
+  it("vincula, substitui tags e filtra por tag", async () => {
+    const tagA = Number(
+      db.prepare("INSERT INTO tags (name) VALUES ('nginx')").run()
+        .lastInsertRowid,
+    );
+    const tagB = Number(
+      db.prepare("INSERT INTO tags (name) VALUES ('security')").run()
+        .lastInsertRowid,
+    );
+    const id = await createSample();
 
-      const result = await repository.findById(999);
+    await repository.attachTags(id, [tagA]);
+    expect(await repository.list({ tagId: tagA })).toHaveLength(1);
 
-      expect(result).toBeNull();
-    });
+    await repository.replaceTags(id, [tagB]);
+    expect(await repository.list({ tagId: tagA })).toHaveLength(0);
+    expect(await repository.list({ tagId: tagB })).toHaveLength(1);
   });
 
-  describe("update", () => {
-    it("deve atualizar title, description e type_id pelo id", async () => {
-      const { pool, execute } = makePoolMock();
-      const repository = new MySqlSnippetRepository(pool);
-
-      await repository.update(7, {
-        title: "Novo",
-        description: "desc",
-        typeId: 3,
-      });
-
-      const [sql, params] = execute.mock.calls[0];
-      expect(sql).toContain("UPDATE snippets SET");
-      expect(params).toEqual(["Novo", "desc", 3, 7]);
+  it("filtra por pasta, tipo e busca textual combinados", async () => {
+    await createSample("Compose base"); // typeId 6, folder 4
+    const other = await repository.create({
+      title: "Regex de e-mail",
+      description: null,
+      typeId: 10, // Regex (seed)
+      folderId: null,
     });
+
+    const byFolder = await repository.list({ folderId: 4 });
+    expect(byFolder.map((s) => s.title)).toEqual(["Compose base"]);
+
+    const bySearch = await repository.list({ search: "regex" });
+    expect(bySearch.map((s) => s.id)).toEqual([other]);
+
+    const byTypeAndSearch = await repository.list({ typeId: 6, search: "compose" });
+    expect(byTypeAndSearch).toHaveLength(1);
   });
 
-  describe("replaceTags", () => {
-    it("deve apagar as tags atuais e inserir as novas", async () => {
-      const { pool, execute } = makePoolMock();
-      const repository = new MySqlSnippetRepository(pool);
+  it("delete remove o registro e o pivô em cascata", async () => {
+    const tag = Number(
+      db.prepare("INSERT INTO tags (name) VALUES ('x')").run().lastInsertRowid,
+    );
+    const id = await createSample();
+    await repository.attachTags(id, [tag]);
 
-      await repository.replaceTags(7, [3, 5]);
+    await repository.delete(id);
 
-      const [deleteSql] = execute.mock.calls[0];
-      const [insertSql, insertParams] = execute.mock.calls[1];
-      expect(deleteSql).toContain("DELETE FROM snippet_tags WHERE snippet_id = ?");
-      expect(insertSql).toContain("INSERT INTO snippet_tags");
-      expect(insertParams).toEqual([7, 3, 7, 5]);
-    });
-
-    it("deve apenas apagar quando a nova lista de tags é vazia", async () => {
-      const { pool, execute } = makePoolMock();
-      const repository = new MySqlSnippetRepository(pool);
-
-      await repository.replaceTags(7, []);
-
-      expect(execute).toHaveBeenCalledTimes(1);
-      expect(execute.mock.calls[0][0]).toContain("DELETE FROM snippet_tags");
-    });
+    expect(await repository.findById(id)).toBeNull();
+    const pivot = db
+      .prepare("SELECT COUNT(*) AS n FROM snippet_tags WHERE snippet_id = ?")
+      .get(id) as { n: number };
+    expect(pivot.n).toBe(0);
   });
 });

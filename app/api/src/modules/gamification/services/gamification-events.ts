@@ -1,6 +1,11 @@
+import { eventBus, GAMIFICATION_EVENT } from "../../../shared/events/event-bus";
 import { Rank } from "../models/profile";
+import { StatsRepository } from "../repositories/stats-repository";
 import { AddXpService } from "./add-xp-service";
-import { UnlockAchievementService } from "./unlock-achievement-service";
+import {
+  CheckAchievementsService,
+  localDay,
+} from "./check-achievements-service";
 
 /** XP base concedido por ação do usuário. */
 export const XP_REWARDS = {
@@ -25,28 +30,34 @@ export interface GamificationOutcome {
 }
 
 /**
- * Orquestra a gamificação das ações: concede XP base e tenta desbloquear as
- * conquistas relacionadas (idempotente). Retorna um resumo para os toasts.
+ * Orquestra a gamificação: registra atividade (streak), concede o XP base e
+ * roda o motor de conquistas data-driven. Publica o resultado no event bus
+ * (SSE) e o retorna para a resposta HTTP.
  */
 export class GamificationEvents {
   constructor(
     private readonly addXp: AddXpService,
-    private readonly unlock: UnlockAchievementService,
+    private readonly checkAchievements: CheckAchievementsService,
+    private readonly stats: StatsRepository,
+    private readonly now: () => Date = () => new Date(),
   ) {}
 
   onSnippetCreated(profileId: number): Promise<GamificationOutcome> {
-    return this.award(profileId, XP_REWARDS.snippetCreated, ["first_script"]);
+    return this.award(profileId, XP_REWARDS.snippetCreated, "snippet_created");
   }
 
   onFolderCreated(profileId: number): Promise<GamificationOutcome> {
-    return this.award(profileId, XP_REWARDS.folderCreated, ["organizer"]);
+    return this.award(profileId, XP_REWARDS.folderCreated, "folder_created");
   }
 
   private async award(
     profileId: number,
     baseXp: number,
-    codes: string[],
+    action: "snippet_created" | "folder_created",
   ): Promise<GamificationOutcome> {
+    const date = this.now();
+    await this.stats.touchActivity(localDay(date));
+
     const xpResult = await this.addXp.execute(profileId, baseXp);
 
     let { level, rank } = xpResult.profile;
@@ -55,11 +66,13 @@ export class GamificationEvents {
     let xpGained = baseXp;
     const unlocked: UnlockedView[] = [];
 
-    for (const code of codes) {
-      const result = await this.unlock.execute(profileId, code);
-      if (!result.unlocked) {
-        continue;
-      }
+    const results = await this.checkAchievements.execute(profileId, {
+      action,
+      level,
+      date,
+    });
+
+    for (const result of results) {
       unlocked.push({
         code: result.achievement.code,
         name: result.achievement.name,
@@ -74,6 +87,16 @@ export class GamificationEvents {
       }
     }
 
-    return { xpGained, level, rank, leveledUp, rankChanged, unlocked };
+    const outcome: GamificationOutcome = {
+      xpGained,
+      level,
+      rank,
+      leveledUp,
+      rankChanged,
+      unlocked,
+    };
+
+    eventBus.emit(GAMIFICATION_EVENT, outcome);
+    return outcome;
   }
 }
