@@ -1,10 +1,13 @@
 import { Plus, Search, Trash2 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
-import { api, ProjectType, Snippet, Tag } from "../lib/api";
+import { api, ProjectType, Snippet, SnippetDetail, Tag } from "../lib/api";
+import { Drawer } from "./Drawer";
+import { Markdown } from "./Markdown";
 import {
   Badge,
   Button,
+  CodeBlock,
   ErrorText,
   Input,
   Panel,
@@ -30,6 +33,15 @@ export function SnippetsPanel() {
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [detail, setDetail] = useState<SnippetDetail | null>(null);
+
+  async function openDetail(id: number): Promise<void> {
+    try {
+      setDetail(await api.getSnippet(id));
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }
 
   async function reload(): Promise<void> {
     setError(null);
@@ -201,35 +213,59 @@ export function SnippetsPanel() {
           {snippets.map((s) => (
             <li
               key={s.id}
-              className="group rounded-md border border-line/70 bg-panel/50 p-3 transition hover:border-neon/40"
+              className="group flex items-start justify-between gap-3 rounded-md border border-line/70 bg-panel/50 p-3 transition hover:border-neon/40"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-fg">{s.title}</p>
-                  {s.description && (
-                    <p className="truncate text-sm text-muted">
-                      {s.description}
-                    </p>
-                  )}
-                  <div className="mt-2 flex items-center gap-2">
-                    <Badge tone="neon2">{typeName(s.typeId)}</Badge>
-                    <span className="font-mono text-[10px] text-muted">
-                      {s.createdAt?.slice(0, 10)}
-                    </span>
-                  </div>
+              <button
+                onClick={() => void openDetail(s.id)}
+                className="min-w-0 flex-1 text-left"
+              >
+                <p className="truncate font-medium text-fg group-hover:text-neon">
+                  {s.title}
+                </p>
+                {s.description && (
+                  <Markdown className="line-clamp-2 text-sm text-muted">
+                    {s.description}
+                  </Markdown>
+                )}
+                <div className="mt-2 flex items-center gap-2">
+                  <Badge tone="neon2">{typeName(s.typeId)}</Badge>
+                  <span className="font-mono text-[10px] text-muted">
+                    {s.createdAt?.slice(0, 10)}
+                  </span>
                 </div>
-                <button
-                  onClick={() => void handleDelete(s.id)}
-                  className="text-muted opacity-0 transition group-hover:opacity-100 hover:text-danger"
-                  aria-label={`remover ${s.title}`}
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
+              </button>
+              <button
+                onClick={() => void handleDelete(s.id)}
+                className="text-muted opacity-0 transition group-hover:opacity-100 hover:text-danger"
+                aria-label={`remover ${s.title}`}
+              >
+                <Trash2 size={15} />
+              </button>
             </li>
           ))}
         </ul>
       </Panel>
+
+      <Drawer
+        open={detail !== null}
+        onClose={() => setDetail(null)}
+        kicker={`// ${detail ? typeName(detail.snippet.typeId) : "artefato"}`}
+        title={detail?.snippet.title ?? ""}
+      >
+        {detail && (
+          <div className="space-y-5">
+            {detail.snippet.description && (
+              <Markdown>{detail.snippet.description}</Markdown>
+            )}
+            <div>
+              <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-neon/80">
+                // conteúdo
+              </p>
+              <CodeBlock>{detail.body}</CodeBlock>
+            </div>
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 }

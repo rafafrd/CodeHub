@@ -77,6 +77,12 @@ export interface SnippetFilters {
   search?: string;
 }
 
+export interface SnippetDetail {
+  snippet: Snippet;
+  metadata: Record<string, unknown>;
+  body: string;
+}
+
 // ---- Gamificação ----
 export type Rank = "Bronze" | "Prata" | "Ouro" | "Platina" | "Diamante";
 
@@ -155,6 +161,7 @@ export const api = {
     const qs = query.toString();
     return http<Snippet[]>(`/snippets${qs ? `?${qs}` : ""}`);
   },
+  getSnippet: (id: number) => http<SnippetDetail>(`/snippets/${id}`),
   createSnippet: (body: CreateSnippetBody) =>
     http<CreatedSnippet>("/snippets", {
       method: "POST",

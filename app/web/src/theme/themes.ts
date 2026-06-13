@@ -1,4 +1,10 @@
-export type ThemeId = "dedsec" | "midnight" | "light";
+export type ThemeId =
+  | "dedsec"
+  | "midnight"
+  | "light"
+  | "dracula"
+  | "monokai"
+  | "cyberpunk2077";
 
 export interface ThemeMeta {
   id: ThemeId;
@@ -20,6 +26,24 @@ export const THEMES: ThemeMeta[] = [
     label: "Midnight",
     description: "Escuro sóbrio, azul e violeta.",
     swatch: ["#4f9dff", "#a78bfa", "#0b0f17"],
+  },
+  {
+    id: "dracula",
+    label: "Dracula",
+    description: "O clássico roxo/rosa em fundo púrpura escuro.",
+    swatch: ["#bd93f9", "#ff79c6", "#282a36"],
+  },
+  {
+    id: "monokai",
+    label: "Monokai",
+    description: "Verde/rosa vibrante sobre cinza-quente do editor.",
+    swatch: ["#a6e22e", "#f92672", "#272822"],
+  },
+  {
+    id: "cyberpunk2077",
+    label: "Cyberpunk 2077",
+    description: "Amarelo Night City + ciano sobre preto.",
+    swatch: ["#fcee0a", "#00f0ff", "#0a0a0f"],
   },
   {
     id: "light",
