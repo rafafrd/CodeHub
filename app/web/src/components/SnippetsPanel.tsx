@@ -1,7 +1,6 @@
 import { Plus, Search, Trash2 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
-import { useGamification } from "../gamification/GamificationProvider";
 import { api, ProjectType, Snippet, Tag } from "../lib/api";
 import {
   Badge,
@@ -23,7 +22,6 @@ const EMPTY_FORM = {
 };
 
 export function SnippetsPanel() {
-  const { notify } = useGamification();
   const [snippets, setSnippets] = useState<Snippet[]>([]);
   const [types, setTypes] = useState<ProjectType[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
@@ -72,7 +70,7 @@ export function SnippetsPanel() {
     setBusy(true);
     setError(null);
     try {
-      const result = await api.createSnippet({
+      await api.createSnippet({
         title: form.title.trim(),
         description: form.description.trim() || undefined,
         content: form.content,
@@ -80,7 +78,7 @@ export function SnippetsPanel() {
         tags: selectedTags,
         mermaid_flow: form.mermaidFlow.trim() || undefined,
       });
-      if (result.gamification) notify(result.gamification);
+      // Toast de XP/conquista chega via SSE (GamificationProvider).
       setForm(EMPTY_FORM);
       setSelectedTags([]);
       await reload();

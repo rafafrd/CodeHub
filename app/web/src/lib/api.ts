@@ -17,9 +17,32 @@ async function http<T>(path: string, options?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
+export type Behavior =
+  | "snippet"
+  | "markdown"
+  | "ai-skill"
+  | "dockerfile"
+  | "docker-compose"
+  | "server-config"
+  | "cicd"
+  | "shell"
+  | "query"
+  | "regex"
+  | "git-hook"
+  | "middleware"
+  | "api-contract"
+  | "iac"
+  | "env"
+  | "keys";
+
 export interface ProjectType {
   id: number;
   name: string;
+  behavior: Behavior;
+}
+
+export interface SetupStatus {
+  configured: boolean;
 }
 
 export interface Tag {
@@ -109,10 +132,10 @@ type CreatedFolder = Folder & { gamification?: GamificationOutcome };
 export const api = {
   // Tipos
   listTypes: () => http<ProjectType[]>("/types"),
-  createType: (name: string) =>
+  createType: (name: string, behavior?: Behavior) =>
     http<ProjectType>("/types", {
       method: "POST",
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, behavior }),
     }),
   deleteType: (id: number) => http<void>(`/types/${id}`, { method: "DELETE" }),
 
@@ -140,6 +163,14 @@ export const api = {
   deleteSnippet: (id: number) =>
     http<void>(`/snippets/${id}`, { method: "DELETE" }),
 
+  // Setup (primeira execução: cria a conta/arquivo .sqlite)
+  getSetupStatus: () => http<SetupStatus>("/setup"),
+  createAccount: (name: string) =>
+    http<{ username: string; file: string }>("/setup", {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    }),
+
   // Gamificação
   getProfile: () => http<ProfileView>("/profile"),
 
@@ -151,3 +182,21 @@ export const api = {
       body: JSON.stringify({ name, parent_id: parentId }),
     }),
 };
+
+/**
+ * Assina o stream SSE de gamificação (CU03). Retorna a função de cleanup.
+ * Toda ação que concede XP/conquista chega aqui em tempo real.
+ */
+export function subscribeGamification(
+  onEvent: (outcome: GamificationOutcome) => void,
+): () => void {
+  const source = new EventSource(`${BASE}/events`);
+  source.addEventListener("gamification", (event) => {
+    try {
+      onEvent(JSON.parse((event as MessageEvent).data) as GamificationOutcome);
+    } catch {
+      /* payload inválido — ignora */
+    }
+  });
+  return () => source.close();
+}
