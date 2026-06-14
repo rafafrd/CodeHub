@@ -1,5 +1,14 @@
 # 🚀 Roadmap CodeHub v2.0: Expansão de UX, Gamificação e "Modo Jogo"
 
+> ✅ **Entregue (branch `feature/v2`)** — implementado em 5 fases:
+> 1. **SQLite "Memory Card"** (better-sqlite3, `.sqlite` versionado no Git, setup de 1ª execução).
+> 2. **Tipologia (16 tipos c/ `behavior`) + 53 conquistas** data-driven (TDD).
+> 3. **UX:** Markdown nativo, Drawer de detalhe, 3 temas novos (Dracula/Monokai/Cyberpunk 2077), Boot Intro 2.0.
+> 4. **Modo Jogo:** quarto cyberpunk 2D (R3F + GSAP), avatar pixel art estilo Link (WASD/setas), balões flutuantes, idle "zzZ".
+> 5. **Consolidação:** SSE (`/api/events`), versão 2.0.0, docs.
+>
+> Validado ao vivo (setup → dashboard 0/53 → modo jogo) e por 111 testes no backend.
+
 ## 📌 Visão Geral
 
 Esta especificação define o escopo da versão 2.0 do CodeHub. O objetivo é transformar a aplicação em uma ferramenta ainda mais robusta para desenvolvedores, introduzindo renderização avançada, dezenas de novas tipologias de conteúdo, gamificação expandida e uma interface interativa opcional gamificada (Modo Jogo).

@@ -6,15 +6,20 @@ O **CodeHub** é um sistema centralizado e um inventário inteligente para armaz
 
 O projeto foi construído sob uma arquitetura de **Monorepo** e utiliza uma abordagem de **Armazenamento Híbrido**:
 
-- **Indexação e Taxonomia:** MySQL (relacionamentos, categorias e tags).
+- **Indexação e Taxonomia:** **SQLite** — o arquivo `.sqlite` é o "Memory Card" do sistema e é **versionado no Git** (save state via commit).
 - **Armazenamento de Conteúdo:** File System local, com arquivos Markdown (`.md`) usando Frontmatter para metadados e suporte a diagramas Mermaid.
 
 **Stack Principal:**
 
 - **Backend:** Node.js, TypeScript, Express.js (arquitetura limpa: Routes → Controllers → Services → Repositories).
-- **Validação:** Zod. **Testes:** Jest (TDD estrito na camada de Services).
-- **Banco de Dados:** MySQL (driver `mysql2`, SQL puro).
+- **Validação:** Zod. **Testes:** Jest (TDD estrito na camada de Services; repos por integração `:memory:`).
+- **Banco de Dados:** **SQLite** (driver `better-sqlite3`).
+- **Frontend:** React + Vite + Tailwind; **Modo Jogo** opcional em React Three Fiber + GSAP.
 - **Infraestrutura:** Docker, Nginx, GitHub Actions (CI).
+
+> 🆕 **v2.0:** SQLite versionável, 16 tipos de artefato, 53 conquistas, Markdown nativo,
+> 3 temas novos (Dracula/Monokai/Cyberpunk 2077) e o **Modo Jogo** (quarto 2D pixel art,
+> avatar estilo Link, WASD). Veja `docs/v2-roadmap.md`.
 
 ## 📂 Estrutura do Monorepo (Workspaces)
 
@@ -27,13 +32,13 @@ codehub/
 ├── infra/
 │   └── nginx/            # Configuração do proxy reverso (Nginx)
 ├── .github/workflows/    # Pipeline de CI (lint + test + build)
-├── docker-compose.yml    # Orquestra API + MySQL + Nginx
+├── docker-compose.yml    # Orquestra API + Nginx (SQLite é arquivo local)
 └── claude.md             # Diretrizes arquiteturais e regras de IA
 ```
 
 ## 🐳 Como rodar (Docker — recomendado)
 
-Sobe a stack completa — **API + MySQL + Nginx** — com a migration do banco aplicada **automaticamente** na primeira execução.
+Sobe a stack — **API + Nginx** (o SQLite é um arquivo local, sem container de banco). Na primeira vez, o app pede seu **codinome** para criar o "Memory Card" (`<nome>.sqlite`).
 
 > **Pré-requisito:** Docker + Docker Compose instalados.
 
@@ -58,28 +63,30 @@ curl http://localhost:8080/health
 
 | Recurso | Rota base |
 | --- | --- |
+| Setup (1ª execução) | `/api/setup` |
 | Snippets | `/api/snippets` |
 | Tipos de projeto | `/api/types` |
 | Tags | `/api/tags` |
+| Perfil (XP/conquistas) | `/api/profile` |
+| Inventário (pastas) | `/api/folders` |
+| Eventos de gamificação (SSE) | `/api/events` |
 
 **Operação:**
 
 ```bash
 docker compose ps          # status dos containers
 docker compose logs -f api # acompanha os logs da API
-docker compose down        # para tudo (mantém os dados nos volumes)
-docker compose down -v     # para e APAGA os volumes (zera MySQL + storage dos .md)
+docker compose down        # para tudo (o .sqlite e os .md ficam em app/api/storage)
 ```
 
-**Variáveis de ambiente (opcionais — têm default):** crie um `.env` na raiz para sobrescrever.
+**Variáveis de ambiente (opcionais):**
 
 | Variável | Default | |
 | --- | --- | --- |
-| `DB_PASSWORD` | `root` | senha do root do MySQL |
-| `DB_NAME` | `codehub` | nome do banco |
-| `DB_HOST_PORT` | `3307` | porta do host para o MySQL (use `3306` só se não houver MySQL local) |
+| `STORAGE_PATH` | `./storage` | onde ficam o `.sqlite` e os `.md` — o "save state" versionado no Git |
 
-> **Conflito de porta?** Se aparecer `bind: ... 3306 ... address already in use`, é porque você tem um MySQL rodando no host. A stack já publica o MySQL na **3307** por padrão para evitar isso (a API não depende dessa porta — usa a rede interna). Só o Nginx (`8080`) precisa estar livre.
+> Apenas o Nginx (`8080`) precisa estar livre no host; não há mais banco em container.
+> O `app/api/storage` é um bind mount, então seus dados sobrevivem a `docker compose down`.
 
 ### Fluxo da stack
 
@@ -87,7 +94,7 @@ docker compose down -v     # para e APAGA os volumes (zera MySQL + storage dos .
 graph LR
     Client -->|":8080"| Nginx
     Nginx -->|":3333"| API
-    API -->|":3306"| MySQL
+    API -->|"arquivo"| SQLite[(SQLite .sqlite)]
     API -->|".md"| FS[(File System / storage)]
 ```
 
@@ -108,7 +115,7 @@ npm run build       # compila o TypeScript
 npm run test:watch -w @codehub/api
 ```
 
-> Para rodar a API localmente apontando para um MySQL próprio, copie `app/api/.env.example` para `app/api/.env` e ajuste as credenciais.
+> Na primeira execução, o app exibe a tela de setup (_"identify yourself"_) para criar a conta/banco `.sqlite`. Não há credenciais de banco a configurar.
 
 ### Frontend (`app/web`)
 
@@ -119,7 +126,8 @@ npm run dev -w @codehub/web      # http://localhost:5173
 npm run build -w @codehub/web    # build de produção (tsc + vite)
 ```
 
-A interface tem abas para **Snippets** (listar/criar/remover), **Tipos** e **Tags**.
+A interface tem abas para **Perfil** (XP/patente/conquistas), **Snippets**, **Inventário**
+(pastas), **Tipos**, **Tags**, **Ajuda** e **Config** — e o **Modo Jogo** (hub 2D pixel art).
 
 ## 📖 Documentação e Metodologia
 
