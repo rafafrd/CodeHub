@@ -1,5 +1,4 @@
-import { Pool, ResultSetHeader, RowDataPacket } from "mysql2/promise";
-
+import { GetDb } from "../../../database/sqlite";
 import { Snippet } from "../models/snippet";
 
 /** Dados de criação (metadados; `file_path` é preenchido depois). */
@@ -17,7 +16,7 @@ export interface UpdateSnippetRecord {
   typeId: number;
 }
 
-/** Filtros opcionais de listagem (CU02: por tipo, tag ou busca textual). */
+/** Filtros opcionais de listagem (CU02: por tipo, tag, pasta ou busca). */
 export interface SnippetListFilters {
   typeId?: number;
   tagId?: number;
@@ -26,13 +25,10 @@ export interface SnippetListFilters {
 }
 
 /**
- * Contrato do repositório de metadados (MySQL), implementado por
- * `MySqlSnippetRepository`. Os Services dependem desta interface para que
- * possam ser testados com um mock (TDD da Fase 4).
- *
- * Observação sobre o fluxo de criação (ver ROADMAP): a orquestração
- * transacional `create -> grava .md -> updateFilePath -> attachTags` é
- * responsabilidade do Service, não do repositório.
+ * Contrato do repositório de metadados (SQLite), implementado por
+ * `SqliteSnippetRepository`. Os Services dependem desta interface (mock no TDD).
+ * A orquestração `create -> grava .md -> updateFilePath -> attachTags` é
+ * responsabilidade do Service.
  */
 export interface SnippetRepository {
   create(data: CreateSnippetRecord): Promise<number>;
@@ -45,71 +41,88 @@ export interface SnippetRepository {
   delete(id: number): Promise<void>;
 }
 
-interface SnippetRow extends RowDataPacket {
+interface SnippetRow {
   id: number;
   title: string;
   description: string | null;
   file_path: string | null;
   type_id: number;
   folder_id: number | null;
-  created_at: Date;
+  created_at: string;
 }
 
-export class MySqlSnippetRepository implements SnippetRepository {
-  constructor(private readonly pool: Pool) {}
+/** Converte "YYYY-MM-DD HH:MM:SS" (UTC, padrão do SQLite) em Date. */
+function toDate(value: string): Date {
+  return new Date(`${value.replace(" ", "T")}Z`);
+}
+
+function toDomain(row: SnippetRow): Snippet {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    filePath: row.file_path,
+    typeId: row.type_id,
+    folderId: row.folder_id,
+    createdAt: toDate(row.created_at),
+  };
+}
+
+export class SqliteSnippetRepository implements SnippetRepository {
+  constructor(private readonly db: GetDb) {}
 
   async create(data: CreateSnippetRecord): Promise<number> {
-    const [result] = await this.pool.execute<ResultSetHeader>(
-      "INSERT INTO snippets (title, description, type_id, folder_id) VALUES (?, ?, ?, ?)",
-      [data.title, data.description, data.typeId, data.folderId],
-    );
-
-    return result.insertId;
+    const info = this.db()
+      .prepare(
+        "INSERT INTO snippets (title, description, type_id, folder_id) VALUES (?, ?, ?, ?)",
+      )
+      .run(data.title, data.description, data.typeId, data.folderId);
+    return Number(info.lastInsertRowid);
   }
 
   async updateFilePath(id: number, filePath: string): Promise<void> {
-    await this.pool.execute("UPDATE snippets SET file_path = ? WHERE id = ?", [
-      filePath,
-      id,
-    ]);
+    this.db()
+      .prepare("UPDATE snippets SET file_path = ? WHERE id = ?")
+      .run(filePath, id);
   }
 
   async attachTags(snippetId: number, tagIds: number[]): Promise<void> {
     if (tagIds.length === 0) {
       return;
     }
-
-    const placeholders = tagIds.map(() => "(?, ?)").join(", ");
-    const params = tagIds.flatMap((tagId) => [snippetId, tagId]);
-
-    await this.pool.execute(
-      `INSERT INTO snippet_tags (snippet_id, tag_id) VALUES ${placeholders}`,
-      params,
+    const insert = this.db().prepare(
+      "INSERT INTO snippet_tags (snippet_id, tag_id) VALUES (?, ?)",
     );
+    const all = this.db().transaction((ids: number[]) => {
+      for (const tagId of ids) {
+        insert.run(snippetId, tagId);
+      }
+    });
+    all(tagIds);
   }
 
   async update(id: number, data: UpdateSnippetRecord): Promise<void> {
-    await this.pool.execute(
-      "UPDATE snippets SET title = ?, description = ?, type_id = ? WHERE id = ?",
-      [data.title, data.description, data.typeId, id],
-    );
+    this.db()
+      .prepare(
+        "UPDATE snippets SET title = ?, description = ?, type_id = ? WHERE id = ?",
+      )
+      .run(data.title, data.description, data.typeId, id);
   }
 
   async replaceTags(snippetId: number, tagIds: number[]): Promise<void> {
-    await this.pool.execute("DELETE FROM snippet_tags WHERE snippet_id = ?", [
-      snippetId,
-    ]);
+    this.db()
+      .prepare("DELETE FROM snippet_tags WHERE snippet_id = ?")
+      .run(snippetId);
     await this.attachTags(snippetId, tagIds);
   }
 
   async findById(id: number): Promise<Snippet | null> {
-    const [rows] = await this.pool.execute<SnippetRow[]>(
-      "SELECT id, title, description, file_path, type_id, folder_id, created_at FROM snippets WHERE id = ?",
-      [id],
-    );
-
-    const row = rows[0];
-    return row ? this.toDomain(row) : null;
+    const row = this.db()
+      .prepare(
+        "SELECT id, title, description, file_path, type_id, folder_id, created_at FROM snippets WHERE id = ?",
+      )
+      .get(id) as SnippetRow | undefined;
+    return row ? toDomain(row) : null;
   }
 
   async list(filters: SnippetListFilters = {}): Promise<Snippet[]> {
@@ -140,25 +153,13 @@ export class MySqlSnippetRepository implements SnippetRepository {
     if (clauses.length > 0) {
       sql += ` WHERE ${clauses.join(" AND ")}`;
     }
-    sql += " ORDER BY s.created_at DESC";
+    sql += " ORDER BY s.created_at DESC, s.id DESC";
 
-    const [rows] = await this.pool.execute<SnippetRow[]>(sql, params);
-    return rows.map((row) => this.toDomain(row));
+    const rows = this.db().prepare(sql).all(...params) as SnippetRow[];
+    return rows.map(toDomain);
   }
 
   async delete(id: number): Promise<void> {
-    await this.pool.execute("DELETE FROM snippets WHERE id = ?", [id]);
-  }
-
-  private toDomain(row: SnippetRow): Snippet {
-    return {
-      id: row.id,
-      title: row.title,
-      description: row.description,
-      filePath: row.file_path,
-      typeId: row.type_id,
-      folderId: row.folder_id,
-      createdAt: row.created_at,
-    };
+    this.db().prepare("DELETE FROM snippets WHERE id = ?").run(id);
   }
 }

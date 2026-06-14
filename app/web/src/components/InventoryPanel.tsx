@@ -2,7 +2,6 @@ import clsx from "clsx";
 import { ChevronRight, Folder as FolderIcon, FolderPlus } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
-import { useGamification } from "../gamification/GamificationProvider";
 import { api, Folder } from "../lib/api";
 import { Button, ErrorText, Input, Panel, SectionHeading, Select } from "./ui";
 
@@ -61,7 +60,6 @@ function FolderRow({ node, depth }: { node: TreeNode; depth: number }) {
 }
 
 export function InventoryPanel() {
-  const { notify } = useGamification();
   const [folders, setFolders] = useState<Folder[]>([]);
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState(0);
@@ -87,8 +85,8 @@ export function InventoryPanel() {
     setBusy(true);
     setError(null);
     try {
-      const result = await api.createFolder(name.trim(), parentId || null);
-      if (result.gamification) notify(result.gamification);
+      await api.createFolder(name.trim(), parentId || null);
+      // Toast de XP/conquista chega via SSE (GamificationProvider).
       setName("");
       setParentId(0);
       await reload();

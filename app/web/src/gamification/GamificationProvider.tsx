@@ -1,8 +1,15 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Award, TrendingUp, Trophy, Zap } from "lucide-react";
-import { createContext, ReactNode, useContext, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
-import { GamificationOutcome } from "../lib/api";
+import { GamificationOutcome, subscribeGamification } from "../lib/api";
 
 type ToastKind = "xp" | "level" | "rank" | "achievement";
 
@@ -51,6 +58,14 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
       push({ kind: "achievement", title: "Conquista desbloqueada", subtitle: a.name }),
     );
   }
+
+  // Fonte única dos toasts: o stream SSE do backend (CU03). `notifyRef` evita
+  // recriar a assinatura a cada render.
+  const notifyRef = useRef(notify);
+  notifyRef.current = notify;
+  useEffect(() => {
+    return subscribeGamification((outcome) => notifyRef.current(outcome));
+  }, []);
 
   return (
     <GamificationContext.Provider value={{ notify }}>

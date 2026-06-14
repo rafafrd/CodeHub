@@ -10,7 +10,7 @@ import {
   Tags as TagsIcon,
   Terminal,
 } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 
 import { BootIntro } from "./components/BootIntro";
 import { DashboardPanel } from "./components/DashboardPanel";
@@ -20,6 +20,10 @@ import { SettingsPanel } from "./components/SettingsPanel";
 import { SnippetsPanel } from "./components/SnippetsPanel";
 import { TaxonomyPanel } from "./components/TaxonomyPanel";
 import { api } from "./lib/api";
+import { useSettings } from "./theme/SettingsContext";
+
+// Chunk separado: o three.js/R3F só carrega quando o Modo Jogo é ativado.
+const GameMode = lazy(() => import("./game/GameMode"));
 
 type Tab =
   | "profile"
@@ -92,7 +96,22 @@ function NavButton({
 }
 
 export function App() {
+  const { gameMode } = useSettings();
   const [tab, setTab] = useState<Tab>("profile");
+
+  if (gameMode) {
+    return (
+      <Suspense
+        fallback={
+          <div className="flex h-screen items-center justify-center bg-base font-mono text-sm text-neon">
+            carregando o quarto cibernético…
+          </div>
+        }
+      >
+        <GameMode />
+      </Suspense>
+    );
+  }
 
   return (
     <div className="flex min-h-screen">

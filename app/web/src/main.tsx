@@ -8,6 +8,7 @@ import "@fontsource/share-tech-mono/400.css";
 
 import { App } from "./App";
 import { GamificationProvider } from "./gamification/GamificationProvider";
+import { SetupGate } from "./setup/SetupGate";
 import { SettingsProvider } from "./theme/SettingsContext";
 import "./index.css";
 
@@ -19,9 +20,11 @@ if (!root) {
 createRoot(root).render(
   <StrictMode>
     <SettingsProvider>
-      <GamificationProvider>
-        <App />
-      </GamificationProvider>
+      <SetupGate>
+        <GamificationProvider>
+          <App />
+        </GamificationProvider>
+      </SetupGate>
     </SettingsProvider>
   </StrictMode>,
 );

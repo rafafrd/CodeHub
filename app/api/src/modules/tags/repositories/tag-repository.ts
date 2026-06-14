@@ -1,15 +1,11 @@
-import { Pool, ResultSetHeader, RowDataPacket } from "mysql2/promise";
-
+import { GetDb } from "../../../database/sqlite";
 import { Tag } from "../models/tag";
 
 export interface TagData {
   name: string;
 }
 
-/**
- * Repositório de tags (CRUD completo — Fase 6).
- * `findByIds` já era usado pelos Services de snippet na Fase 4.
- */
+/** Repositório de tags (CRUD + lookups). */
 export interface TagRepository {
   create(data: TagData): Promise<number>;
   findAll(): Promise<Tag[]>;
@@ -20,68 +16,58 @@ export interface TagRepository {
   delete(id: number): Promise<void>;
 }
 
-interface TagRow extends RowDataPacket {
+interface TagRow {
   id: number;
   name: string;
 }
 
-export class MySqlTagRepository implements TagRepository {
-  constructor(private readonly pool: Pool) {}
+export class SqliteTagRepository implements TagRepository {
+  constructor(private readonly db: GetDb) {}
 
   async create(data: TagData): Promise<number> {
-    const [result] = await this.pool.execute<ResultSetHeader>(
-      "INSERT INTO tags (name) VALUES (?)",
-      [data.name],
-    );
-    return result.insertId;
+    const info = this.db()
+      .prepare("INSERT INTO tags (name) VALUES (?)")
+      .run(data.name);
+    return Number(info.lastInsertRowid);
   }
 
   async findAll(): Promise<Tag[]> {
-    const [rows] = await this.pool.execute<TagRow[]>(
-      "SELECT id, name FROM tags ORDER BY name",
-    );
-    return rows.map((row) => ({ id: row.id, name: row.name }));
+    return this.db()
+      .prepare("SELECT id, name FROM tags ORDER BY name")
+      .all() as TagRow[];
   }
 
   async findById(id: number): Promise<Tag | null> {
-    const [rows] = await this.pool.execute<TagRow[]>(
-      "SELECT id, name FROM tags WHERE id = ?",
-      [id],
-    );
-    const row = rows[0];
-    return row ? { id: row.id, name: row.name } : null;
+    const row = this.db()
+      .prepare("SELECT id, name FROM tags WHERE id = ?")
+      .get(id) as TagRow | undefined;
+    return row ?? null;
   }
 
   async findByName(name: string): Promise<Tag | null> {
-    const [rows] = await this.pool.execute<TagRow[]>(
-      "SELECT id, name FROM tags WHERE name = ?",
-      [name],
-    );
-    const row = rows[0];
-    return row ? { id: row.id, name: row.name } : null;
+    const row = this.db()
+      .prepare("SELECT id, name FROM tags WHERE name = ?")
+      .get(name) as TagRow | undefined;
+    return row ?? null;
   }
 
   async findByIds(ids: number[]): Promise<Tag[]> {
     if (ids.length === 0) {
       return [];
     }
-
     const placeholders = ids.map(() => "?").join(", ");
-    const [rows] = await this.pool.execute<TagRow[]>(
-      `SELECT id, name FROM tags WHERE id IN (${placeholders})`,
-      ids,
-    );
-    return rows.map((row) => ({ id: row.id, name: row.name }));
+    return this.db()
+      .prepare(`SELECT id, name FROM tags WHERE id IN (${placeholders})`)
+      .all(...ids) as TagRow[];
   }
 
   async update(id: number, data: TagData): Promise<void> {
-    await this.pool.execute("UPDATE tags SET name = ? WHERE id = ?", [
-      data.name,
-      id,
-    ]);
+    this.db()
+      .prepare("UPDATE tags SET name = ? WHERE id = ?")
+      .run(data.name, id);
   }
 
   async delete(id: number): Promise<void> {
-    await this.pool.execute("DELETE FROM tags WHERE id = ?", [id]);
+    this.db().prepare("DELETE FROM tags WHERE id = ?").run(id);
   }
 }
