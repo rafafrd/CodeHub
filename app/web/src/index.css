@@ -328,3 +328,26 @@
   border-top: 1px solid rgb(var(--c-line));
   margin: 0.75rem 0;
 }
+
+/* Modo Jogo — "zzZ" do avatar dormindo */
+.game-zzz {
+  font-family: "Share Tech Mono", ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 18px;
+  color: rgb(var(--c-neon));
+  text-shadow: 0 0 6px rgb(var(--c-neon) / 0.7);
+  animation: zfloat 1.8s ease-in-out infinite;
+}
+@keyframes zfloat {
+  0% {
+    transform: translateY(0) scale(0.8);
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-24px) scale(1.25);
+    opacity: 0;
+  }
+}

@@ -15,6 +15,8 @@ export function SettingsPanel() {
     setAnimations,
     scanlines,
     setScanlines,
+    gameMode,
+    setGameMode,
   } = useSettings();
   const [health, setHealth] = useState<Health>("checking");
 
@@ -85,6 +87,24 @@ export function SettingsPanel() {
             label="Scanlines (efeito CRT)"
           />
         </div>
+      </Panel>
+
+      <Panel>
+        <SectionHeading
+          kicker="// experimental"
+          title="Modo Jogo"
+          action={<Badge tone="neon2">2D</Badge>}
+        />
+        <p className="mb-4 text-sm text-muted">
+          Transforma a navegação num quarto cibernético em pixel art. Ande com{" "}
+          <span className="text-neon">WASD/setas</span> e interaja com os objetos
+          (computador = Snippets, lousa = Tags…).
+        </p>
+        <Toggle
+          checked={gameMode}
+          onChange={setGameMode}
+          label="Habilitar Modo Jogo"
+        />
       </Panel>
 
       <Panel>

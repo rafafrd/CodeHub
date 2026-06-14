@@ -13,12 +13,14 @@ interface Settings {
   theme: ThemeId;
   animations: boolean;
   scanlines: boolean;
+  gameMode: boolean;
 }
 
 interface SettingsContextValue extends Settings {
   setTheme: (theme: ThemeId) => void;
   setAnimations: (value: boolean) => void;
   setScanlines: (value: boolean) => void;
+  setGameMode: (value: boolean) => void;
 }
 
 const STORAGE_KEY = "codehub:settings";
@@ -27,6 +29,7 @@ const DEFAULTS: Settings = {
   theme: DEFAULT_THEME,
   animations: true,
   scanlines: true,
+  gameMode: false,
 };
 
 function loadSettings(): Settings {
@@ -64,6 +67,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       setTheme: (theme) => setSettings((s) => ({ ...s, theme })),
       setAnimations: (animations) => setSettings((s) => ({ ...s, animations })),
       setScanlines: (scanlines) => setSettings((s) => ({ ...s, scanlines })),
+      setGameMode: (gameMode) => setSettings((s) => ({ ...s, gameMode })),
     }),
     [settings],
   );
