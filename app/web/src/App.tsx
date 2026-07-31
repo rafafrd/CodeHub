@@ -104,7 +104,7 @@ export function App() {
       <Suspense
         fallback={
           <div className="flex h-screen items-center justify-center bg-base font-mono text-sm text-neon">
-            carregando o quarto cibernético…
+            carregando a praça cibernética…
           </div>
         }
       >
