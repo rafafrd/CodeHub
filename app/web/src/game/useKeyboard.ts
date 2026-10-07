@@ -1,10 +1,5 @@
 import { useEffect, useRef } from "react";
 
-export interface MoveVector {
-  x: number;
-  y: number;
-}
-
 const KEY_MAP: Record<string, keyof typeof PRESSED> = {
   arrowup: "up",
   w: "up",
@@ -18,23 +13,34 @@ const KEY_MAP: Record<string, keyof typeof PRESSED> = {
 
 const PRESSED = { up: false, down: false, left: false, right: false };
 
+function isTypingTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return (
+    target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
+    target.isContentEditable
+  );
+}
+
 /**
- * Captura WASD/Setas e o "interagir" (E/Espaço). Retorna refs lidos no
- * useFrame (sem re-render por tecla). `onActivity` é chamado a cada input
- * (acorda o avatar do modo Sleep).
+ * Captura WASD/Setas e o "interagir" (Espaço/Enter). Retorna um ref lido no
+ * useFrame (sem re-render por tecla). Ignora teclas quando o foco está num
+ * campo de formulário (ex.: Drawer de uma estação aberto sobre a cena) —
+ * só o keydown é filtrado; o keyup sempre limpa o estado para não deixar
+ * uma direção "presa" caso o foco mude enquanto a tecla ainda está pressionada.
  */
 export function useKeyboard(
-  onActivity: () => void,
   onInteract: () => void,
 ): React.MutableRefObject<typeof PRESSED> {
   const pressed = useRef({ ...PRESSED });
 
   useEffect(() => {
     const down = (e: KeyboardEvent): void => {
+      if (isTypingTarget(e.target)) return;
       const key = e.key.toLowerCase();
-      onActivity();
-      if (key === "e" || key === " ") {
+      if (key === "e" || key === " " || key === "enter") {
         onInteract();
+        e.preventDefault();
         return;
       }
       const dir = KEY_MAP[key];
@@ -53,7 +59,7 @@ export function useKeyboard(
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [onActivity, onInteract]);
+  }, [onInteract]);
 
   return pressed;
 }

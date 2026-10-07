@@ -93,12 +93,13 @@ export function SettingsPanel() {
         <SectionHeading
           kicker="// experimental"
           title="Modo Jogo"
-          action={<Badge tone="neon2">2D</Badge>}
+          action={<Badge tone="neon2">3D</Badge>}
         />
         <p className="mb-4 text-sm text-muted">
-          Transforma a navegação num quarto cibernético em pixel art. Ande com{" "}
-          <span className="text-neon">WASD/setas</span> e interaja com os objetos
-          (computador = Snippets, lousa = Tags…).
+          Transforma a navegação numa praça cibernética em 3D. Ande com{" "}
+          <span className="text-neon">WASD/setas</span> e aproxime-se dos
+          portais (Snippets, Tags, Config…) para abri-los com{" "}
+          <span className="text-neon">Espaço/Enter</span>.
         </p>
         <Toggle
           checked={gameMode}
